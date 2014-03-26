@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="js/lib/jquery-1.10.2.js"></script>
+    <script src="js/lib/skulpt.min.js"></script>
+    <script src="js/lib/skulpt-stdlib.js"></script>
+    <script src="js/doors.js"></script>
+    <style>
+    canvas {
+        border: thin solid black;
+    }
+    .scenarios li {
+        list-style: none;
+    }
+    </style>
+</head>
+<body>
+    <canvas class="revolving" height="400" width="600"></canvas>
+    <canvas class="plot" height="400" width="600"></canvas>
+    <fieldset class="monitor">
+        <label>
+            <input type="radio" name="monitor" value="client" checked>
+            <span>Client</span>
+        </label>
+        <label>
+            <input type="radio" name="monitor" value="server">
+            <span>Server</span>
+        </label>
+    </fieldset>
+    <fieldset class="player-controls">
+        <legend>Player controls</legend>
+        <button class="play" disabled>Play</button>
+        <button class="pause">Pause</button>
+        <button class="step" disabled>Step</button>
+    </fieldset>
+    <fieldset class="people-controls">
+        <legend>People controls</legend>
+        <button class="arrive">Arrive</button>
+    </fieldset>
+    <fieldset class="scenarios">
+        <legend>Scenarios</legend>
+        <ul>
+            <li>
+                <label>
+                    <input type="radio" name="scenario" value="manual" checked>
+                    <span>Manual arrival</span>
+                </label>
+            </li>
+            <li>
+                <label>
+                    <input type="radio" name="scenario" value="early-arrival">
+                    <span>Early arrival</span>
+                </label>
+                <p> Two people arrive, the second is soon enough to catch the next cell after the
+                    first person.
+                </p>
+            </li>
+            <li>
+                <label>
+                    <input type="radio" name="scenario" value="late-arrival">
+                    <span>Late arrival</span>
+                </label>
+                <p> Two people arrive, the second is too late to catch the next cell and waits.
+                </p>
+            </li>
+        </ul>
+    </fieldset>
+    <script>
+    ;(function () {
+        'use strict'
+        var door = new doors.RevolvingDoor(16, 3)
+        var monitor
+        var player = doors.player(door, $('canvas.revolving')[0])
+        var scenario = function (done) {
+            var name = $('input[name=scenario]:checked').val()
+            if (player) {
+                $.get('scenarios/' + encodeURIComponent(name) + '.txt', null, null, 'text')
+                .done(function (stepsFile) {
+                    // Consider any line in the steps file that begins with a number an instruction
+                    // to have that number of people arrive at that step, ignoring anything else
+                    var steps = $.map(stepsFile.split(/^/m), function (line) {
+                        return parseInt(line, 10)
+                    })
+                    steps = $.grep(steps, function (step) {
+                        return !isNaN(step)
+                    })
+                    var step = 0
+                    player.onstep = function () {
+                        door.arriving += steps[step]
+                        step = (step + 1) % steps.length
+                    }
+                    player.play(millisPerStep())
+                    done()
+                })
+            } else {
+                monitor.load(name, done)
+            }
+        }
+        var millisPerStep = function () {
+            var turnsPerSecond = 0.2
+            return 1000 / (door.granularity * turnsPerSecond)
+        }
+        var startEnabled = $('input, button').not(':disabled').attr('disabled', true)
+        scenario(function () {
+            startEnabled.removeAttr('disabled')
+        })
+
+        $('input[name=monitor]').on('change', function () {
+            if (this.value === 'server') {
+                player.pause()
+                player = null
+                monitor = doors.monitor(door, $('canvas.revolving')[0])
+                scenario($.noop)
+            } else {
+                monitor.stop()
+                monitor = null
+                player = doors.player(door, $('canvas.revolving')[0])
+                scenario($.noop)
+            }
+        })
+
+        $('button.arrive').on('click', function () {
+            if (monitor) {
+                monitor.arrive()
+            } else {
+                ++door.arriving
+                player.draw()
+            }
+        })
+        $('button.play').on('click', function () {
+            player.play(millisPerStep())
+            $('button.pause').removeAttr('disabled')
+            $('button.step, button.play').attr('disabled', true)
+        })
+        $('button.pause').on('click', function () {
+            player.pause()
+            $('button.pause').attr('disabled', true)
+            $('button.play, button.step').removeAttr('disabled')
+        })
+        $('button.step').on('click', function () {
+            var enabled = $('.player-controls button').not(':disabled')
+                .attr('disabled', true)
+            player.step(millisPerStep(), function () {
+                enabled.removeAttr('disabled')
+            })
+        })
+        $('input[name=scenario]').on('change', function () {
+            var group = $('input[name=scenario]').not(':disabled')
+            group.attr('disabled', true)
+            scenario(function (run) {
+                group.removeAttr('disabled')
+            })
+        })
+
+        doors.plot('/temperature', $('canvas.plot')[0], 15000)
+    })()
+    </script>
+</body>
+</html>
