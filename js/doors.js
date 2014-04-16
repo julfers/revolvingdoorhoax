@@ -83,6 +83,11 @@
     })
 })()
 
+doors.fault = function (message) {
+    $('<span></span>').text(message).appendTo('.fault')
+    throw message
+}
+
 ;(function () {
     'use strict'
     /* Set up a renderer that draws a door on a canvas */
@@ -182,7 +187,7 @@
             draw: draw,
             step: function (duration, done) {
                 if (duration < 0) {
-                    throw 'Illegal duration' + duration
+                    doors.fault('Illegal duration ' + duration)
                 }
                 var startTime = performance.now()
                 var tick = function (time) {
@@ -269,9 +274,10 @@
         var renderer = doors.renderer(door, canvas)
         var step = 0
         var stopped = true
+        var reset = true
         var nextStep = function () {
             $.getJSON('/step')
-            .done(function (commands, reset) {
+            .done(function (commands) {
                 if (stopped) {
                     return
                 }
@@ -291,25 +297,33 @@
                     step = 0
                 }
                 if (commands.step !== step) {
-                    throw 'Missed a step'
+                    doors.fault('Missed step ' + step)
                 }
                 ++step
                 door.arriving += commands.arrived
                 var stepped = door.step()
                 if (commands.rotate) {
                     if (!stepped) {
-                        throw 'Door out of sync'
+                        doors.fault('Door out of sync')
                     }
-                    renderer.step(commands.duration, nextStep)
+                    renderer.step(commands.duration, function () {
+                        nextStep()
+                    })
                 } else {
                     setTimeout(nextStep, commands.duration)
                     renderer.draw()
                 }
             })
+            .fail(function (xhr) {
+                doors.fault('Step request failed: ' + xhr.status)
+            })
         }
         return {
             arrive: function () {
                 $.ajax({type: 'post', url: '/arrive'})
+                .fail(function (xhr) {
+                    doors.fault('Arrival request failed: ' + xhr.status)
+                })
                 ++door.arriving
                 renderer.draw()
             },
@@ -321,12 +335,17 @@
                     data: JSON.stringify({
                         turns_per_sec: 0.2
                     })
-                }).done(function (status) {
+                })
+                .done(function (status) {
                     if (stopped) {
                         stopped = false
-                        nextStep(true)
+                        reset = true
+                        nextStep()
                     }
                     done()
+                })
+                .fail(function (xhr) {
+                    doors.fault('Start request failed: ' + xhr.status)
                 })
             },
             draw: renderer.draw
@@ -358,19 +377,29 @@
             var maxX = lines[lines.length - 1][0]
             var scaleX = Math.min((canvas.width * 0.95) / (maxX - minX), canvas.width * 0.01)
             var scaleY = (canvas.height * 0.95) / maxY
-            var colors = [null, 'gray', 'red', 'green', 'blue', 'black']
-            console.log(maxY, scaleY)
+            for (var gridLine = minX + 10 * 60; gridLine < maxX; gridLine += 10 * 60) {
+                // Gridlines every ten minutes, dark line every hour
+                _.fillStyle = (gridLine - minX) % (10 * 60 * 6) === 0 ? 'black' : 'lightgray'
+                var x = Math.floor(gridLine * scaleX)
+                _.fillRect(x, 0, 1, scaleY)
+            }
+            var colors = [null, 'gray', 'indigo', 'blue', 'indianred', 'maroon']
+            var xSize = Math.floor(Math.max(canvas.width * 0.95 / lines.length, 1))
             $.each(lines, function (i, line) {
-                var x = (line[0] - minX) * scaleX
+                var x = Math.floor((line[0] - minX) * scaleX - scaleX / 2)
                 $.each(line, function (j, v) {
-                    var y = canvas.height - v * scaleY
+                    var y = Math.floor(canvas.height - v * scaleY - scaleY / 2)
                     if (j != 0) {
-                        _.fillStyle = colors[j]
                         if (i === lines.length - 1) {
-                            _.fillText(v, x, y)
-                        } else {
-                            _.fillRect(x - 1, y - 1, 3, 3)
+                            _.fillStyle = 'black'
+                            _.textBaseline = 'middle'
+                            _.fillText(v, x + 2, y)
                         }
+                        _.fillStyle = colors[j]
+                        _.fillRect(x - xSize, y, xSize, 1)
+                        _.fillStyle = 'lightgray'
+                        _.fillRect(x - xSize, Math.floor(y - scaleY / 2), xSize, 1)
+                        _.fillRect(x - xSize, Math.floor(y + scaleY / 2), xSize, 1)
                     }
                 })
             })
@@ -379,7 +408,6 @@
         var tick = function () {
             $.get(url, null, null, 'text')
             .done(function (csv) {
-                console.log('got', csv)
                 render(csv)
                 if (interval) {
                     setTimeout(tick, interval)

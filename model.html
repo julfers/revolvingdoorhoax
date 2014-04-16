@@ -6,8 +6,10 @@
     <script src="js/lib/skulpt-stdlib.js"></script>
     <script src="js/doors.js"></script>
     <style>
+    .fault {
+        color: red;
+    }
     canvas {
-        border: thin solid black;
     }
     .scenarios li {
         list-style: none;
@@ -15,6 +17,7 @@
     </style>
 </head>
 <body>
+    <p class="fault"></p>
     <canvas class="revolving" height="400" width="600"></canvas>
     <canvas class="plot" height="400" width="600"></canvas>
     <fieldset class="monitor">
@@ -27,7 +30,7 @@
             <span>Server</span>
         </label>
     </fieldset>
-    <fieldset class="player-controls">
+    <fieldset class="player-controls client-controls">
         <legend>Player controls</legend>
         <button class="play" disabled>Play</button>
         <button class="pause">Pause</button>
@@ -69,10 +72,11 @@
     ;(function () {
         'use strict'
         var door = new doors.RevolvingDoor(16, 3)
-        var monitor
+        var monitor = doors.monitor(door, $('canvas.revolving')[0])
         var player = doors.player(door, $('canvas.revolving')[0])
-        var scenario = function (done) {
+        var scenario = function () {
             var name = $('input[name=scenario]:checked').val()
+            var startEnabled = $('input, button').not(':disabled').attr('disabled', true)
             if (player) {
                 $.get('scenarios/' + encodeURIComponent(name) + '.txt', null, null, 'text')
                 .done(function (stepsFile) {
@@ -90,33 +94,34 @@
                         step = (step + 1) % steps.length
                     }
                     player.play(millisPerStep())
-                    done()
+                    startEnabled.removeAttr('disabled')
                 })
             } else {
-                monitor.load(name, done)
+                monitor.load(name, function () {
+                    startEnabled.removeAttr('disabled')
+                })
             }
         }
         var millisPerStep = function () {
             var turnsPerSecond = 0.2
             return 1000 / (door.granularity * turnsPerSecond)
         }
-        var startEnabled = $('input, button').not(':disabled').attr('disabled', true)
-        scenario(function () {
-            startEnabled.removeAttr('disabled')
-        })
-
-        $('input[name=monitor]').on('change', function () {
-            if (this.value === 'server') {
+        var start = function () {
+            if ($('input[name=monitor]:checked').val() === 'server') {
                 player.pause()
                 player = null
                 monitor = doors.monitor(door, $('canvas.revolving')[0])
-                scenario($.noop)
             } else {
                 monitor.stop()
                 monitor = null
                 player = doors.player(door, $('canvas.revolving')[0])
-                scenario($.noop)
             }
+            scenario()
+        }
+        start()
+
+        $('input[name=monitor]').on('change', function () {
+            start()
         })
 
         $('button.arrive').on('click', function () {
@@ -145,11 +150,7 @@
             })
         })
         $('input[name=scenario]').on('change', function () {
-            var group = $('input[name=scenario]').not(':disabled')
-            group.attr('disabled', true)
-            scenario(function (run) {
-                group.removeAttr('disabled')
-            })
+            scenario()
         })
 
         doors.plot('/temperature', $('canvas.plot')[0], 15000)

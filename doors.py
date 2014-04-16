@@ -1,3 +1,8 @@
+'''
+A model of abstract doors that the server uses to simulate door motion and can also compile to
+JavaScript for the online monitor and in-browser demo.
+'''
+
 pi = 3.14159265359 # not sure how to get math.pi when using skulpt
 
 def close_to(a, b, tolerance):

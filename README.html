@@ -2,23 +2,43 @@
 <html>
 <head>
     
-    <title>Building the Project</title>
+    <title>Readme</title>
     <link rel="stylesheet" href="style/global.css">
     <script src="js/lib/skulpt.min.js"></script>
 <script src="js/lib/skulpt-stdlib.js"></script>
 <script src="js/lib/jquery-1.10.2.js"></script>
 <script src="js/doors.js"></script>
+<script src="js/classify.js"></script>
 </head>
 <body>
 <header>
-    <a href="index.html">Home</a>
-    <a href="experiment.html">Experiment</a>
-    <a href="research.html">Research</a>
+    <div><!-- for styling -->
+        <a href="index.html">The revolving door hoax</a>
+        <a href="experiment.html">The experiment</a>
+        <a href="research.html">The research</a>
+    </div>
 </header>
-    <div class="document" id="building-the-project">
-<h1 class="title">Building the Project</h1>
-<p>This requires docutils, easiest installed via &quot;pip install sphinx&quot; and pyserial.</p>
-<p>To get a view of the project, run serve.py and visit it at <a class="reference external" href="http://localhost:8000/">http://localhost:8000/</a>.</p>
+    <div class="document" id="readme">
+<h1 class="title">Readme</h1>
+<p>The whole project compiles to a static Web site, viewable by running <tt class="docutils literal">serve.py</tt> from the root
+directory. Tested on Kubuntu and Windows.</p>
+<p>Visit the project site at <a class="reference external" href="http://revolvingdoorhoax.org">http://revolvingdoorhoax.org</a>.</p>
+<div class="section" id="dependencies">
+<h1>Dependencies</h1>
+<ul class="simple">
+<li><a class="reference external" href="https://www.python.org/">Python 2</a>, for everything except code that runs on Arduino</li>
+<li><a class="reference external" href="http://docutils.sourceforge.net/">Docutils</a>, to generate the site, easiest installed through <a class="reference external" href="http://sphinx-doc.org/latest/install.html">Sphinx</a></li>
+</ul>
+<div class="section" id="optional">
+<h2>Optional</h2>
+<ul class="simple">
+<li><a class="reference external" href="http://pyserial.sourceforge.net/">pySerial</a>, to control Arduino</li>
+<li><a class="reference external" href="http://arduino.cc/en/main/software">Arduino IDE</a>, to upload Arduino software. Alternatively, <a class="reference external" href="http://inotool.org/">Ino</a> may do the trick, but I haven't
+tested with it.</li>
+<li><a class="reference external" href="https://learn.adafruit.com/adafruit-motor-shield-v2-for-arduino/library-reference">Adafruit Motor Shield V2 library</a>, to control the stepper motor</li>
+</ul>
+</div>
+</div>
 </div>
 
 <footer>

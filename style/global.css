@@ -1,8 +1,103 @@
+/* General purpose styles */
+*, *:before, *:after {
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+}
 body {
+    position: relative;
+    margin: 0;
+    padding: 0;
+    font-size: 18px;
+}
+a {
+    color: #08f;
+    text-decoration: none;
+}
+a:visited {
+    color: #048;
+}
+a:hover {
+    text-decoration: underline;
+}
+hr {
+    border: none;
+    border-top: 1px solid #ccc;
+    width: 50%;
+}
+h1, h2, h3, h4, h5, h6 {
+    clear: both;
+    border-bottom: 1px solid #ccc;
+}
+h1 {
+    font-size: 1.5em;
+}
+h2 {
+    font-size: 1.3em;
+}
+h1.title {
+    font-size: 3em;
+}
+img {
+    float: right;
+    padding-left: 20px;
+}
+
+/* Styles specific to parts of the page */
+header {
+    position: relative;
+    background-image: url('../img/banner.png');
+    background-size: cover;
+}
+header > div {
+    display: inline-block;
+    width: 100%;
+}
+header a {
+    display: inline-block;
+    margin: 0;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 20px;
+    padding-right: 150px;
+    color: white;
+    font-weight: bold;
+    font-family: sans-serif;
+    border-left: 1px solid black;
+}
+.home header {
+    height: 500px;
+    background-position: center;
+}
+.home header > div {
+    position: absolute;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.4);
+}
+header a:visited {
+    color: white;
+}
+header a.open {
+    color: #29474d; /* from banner background */
+}
+body > .document {
     max-width: 1000px;
     margin-left: auto;
     margin-right: auto;
+    padding-left: 20px;
+    padding-right: 20px;
 }
-img {
-    max-width: 80%;
+footer {
+    clear: both;
+    width: 90%;
+    margin-top: 50px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-top: 20px;
+    padding-left: 200px;
+    padding-right: 200px;
+    border-top: thin solid #ccc; /* same color as <hr> */
+}
+footer small {
+    float: right;
 }

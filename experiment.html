@@ -8,24 +8,82 @@
 <script src="js/lib/skulpt-stdlib.js"></script>
 <script src="js/lib/jquery-1.10.2.js"></script>
 <script src="js/doors.js"></script>
+<script src="js/classify.js"></script>
 </head>
 <body>
 <header>
-    <a href="index.html">Home</a>
-    <a href="experiment.html">Experiment</a>
-    <a href="research.html">Research</a>
+    <div><!-- for styling -->
+        <a href="index.html">The revolving door hoax</a>
+        <a href="experiment.html">The experiment</a>
+        <a href="research.html">The research</a>
+    </div>
 </header>
     <div class="document" id="the-experiment">
 <h1 class="title">The experiment</h1>
+<img alt="Wide view of revolving door model" src="img/model-wide.jpg" style="width: 200px;" />
 <p>This experiment intends to answer, in a manner accessible to average door users, whether their
-choice of a revolving door versus regular might justifiably be thought to reduce energy consumption.</p>
-<p>Basically, this uses a small-scale model of a building equipped with both a revolving door and a
-swinging door. The heated tiny building sits inside a climactic chamber, that is, a freezer, and
-automatically opens its doors in proportion to a rate of traffic.</p>
-<p>By measuring the drop in temperature caused by different numbers of simulated people arriving, we
-should see whether, all else equal, the revolving door expends less heat.</p>
+choices of a revolving door versus regular might justifiably be thought to reduce energy
+consumption.</p>
+<p>The experiment uses a heated tiny building that automatically opens its doors in proportion to a
+rate of traffic. By measuring the drop in temperature caused by different numbers of simulated
+people arriving, we should see whether, all else equal, the revolving door expends less heat.</p>
 <p><em>Model construction and programming is still in progress, more details to follow</em></p>
-<p>You can run an in-browser demo at <a class="reference external" href="model.html">model.html</a></p>
+<p>You can run an (incomplete) in-browser demo at <a class="reference external" href="model.html">model.html</a></p>
+<div class="section" id="construction">
+<h1>Construction</h1>
+<a class="reference external image-reference" href="img/exterior-schematic.jpg"><img alt="Exterior door position schematic" src="img/exterior-schematic.jpg" style="width: 300px;" /></a>
+<p>This model is approximately one foot on each side, built mostly from medium-density fiberboard,
+3/4-inch for walls and 1/4-inch for a revolving door and a swinging door, placed approximately
+equidistant from the building center.</p>
+<div class="section" id="interior">
+<h2>Interior</h2>
+<p>Each wall is a 12 by 12 inch square, making the building slightly oblong. Inside, two sensors lie
+six and seven inches from the interior front wall.</p>
+<a class="reference external image-reference" href="img/model-inside.jpg"><img alt="Interior model picture" src="img/model-inside.jpg" style="height: 200px;" /></a>
+<a class="reference external image-reference" href="img/interior-schematic.jpg"><img alt="Interior model schematic" src="img/interior-schematic.jpg" style="height: 200px;" /></a>
+<p>Two light bulbs provide heat for the building; they remain on throughout the experiment so a
+constant amount of energy flows into the model. Between the heaters and the sensors, a quarter-inch
+fiberboard barrier blocks direct incandescent heat, but allows air flow through half-inch gap at the
+bottom.</p>
+</div>
+<div class="section" id="revolving-door-enclosure">
+<h2>Revolving door enclosure</h2>
+<p>For the revolving door enclosure, the model uses 4-inch PVC pipe. Since the reference full-sized
+door wings were 3 by 7 feet each, this dictates 1/18 scale, making each wing 2 inches by 4 and 5/8
+inches.</p>
+<a class="reference external image-reference" href="img/revolver-enclosure-schematic.jpg"><img alt="Revolving door enclosure schematic" src="img/revolver-enclosure-schematic.jpg" style="width: 300px;" /></a>
+<p>On each side of the enclosure, a 90-degree opening allows virtual traffic through the door. The
+enclosure is slightly taller for stability, leaving a half-inch lip on the top and a quarter-inch
+lip on the bottom.</p>
+<p>A plug made from three layers of quarter-inch fiberboard covers the top of the enclosure. The lower
+to layers fit into the enclosure while the half-inch wider top layer prevents the plug from slipping
+too far in.</p>
+<p>Another plug, this time one layer, fits into the bottom of the door enclosure, and the enclosure, in
+turn, fits into a circular opening in the quarter-inch fiberboard that represents the building's
+floor, which in turn rests on the 3/4-inch fiberboard ground. A hole through these lower pieces
+provides for the door's axle.</p>
+</div>
+<div class="section" id="revolving-door-and-axle">
+<h2>Revolving door and axle</h2>
+<p>The model uses a four-winged revolving door, made by slotting two pieces of fiberboard together.</p>
+<a class="reference external image-reference" href="img/revolver-schematic.jpg"><img alt="Revolving door schematic" src="img/revolver-schematic.jpg" style="width: 300px;" /></a>
+<p>The slightly wider slot in the bottom of the door pieces allows the door to couple to its drive
+axle via a nylon spacer; the axle itself, a zinc rod, pressure-fits into the spacer and extends
+below the ground, where another nylon spacer couples it to the stepper motor.</p>
+<p>Tolerances around the door are approximately 1/16 inch, due more to my carpentry skill than design.
+By fortuitous coincidence, this turns out to be approximately in scale with the gaps around the
+full-sized revolving door wings used as a reference.</p>
+<p>To keep the centered, the door uses a 4d finish nail's tip as its top axle.</p>
+</div>
+<div class="section" id="swinging-door">
+<h2>Swinging door</h2>
+<p>The swinging door is the same size as one wing of the revolving door, matching the swinging doors
+installed beside the revolving door in the real-world office building used as a reference.</p>
+<a class="reference external image-reference" href="img/swinger-schematic.jpg"><img alt="Swinging door schematic" src="img/swinger-schematic.jpg" style="width: 300px;" /></a>
+<p>A small notch at the bottom of the swinging door leaves room for the servo arm to glue to the
+swinging door, thus coupling directly to the servo.</p>
+</div>
+</div>
 </div>
 
 <footer>

@@ -1,4 +1,6 @@
 /* 
+Runs on Arduino to accept commands from the server and report back temperature readings.
+
 Uses Adafruit Motor Shield v2 (http://www.adafruit.com/products/1438)
 */
 
@@ -71,6 +73,7 @@ void printTemp() {
     Serial.print(degreesC(pin));
     Serial.print(" ");
   }
+  Serial.println();
 }
 
 struct turn {
@@ -81,6 +84,7 @@ struct turn {
 unsigned long duration = 0;
 unsigned long turnEndTime = 0;
 boolean fault = false;
+boolean stepping = true;
 
 void setup() {
   analogReference(EXTERNAL);
@@ -117,7 +121,12 @@ void loop() {
   }
   if (!timeRemain) {
     revolver.release(); // Do not heat motor for no work
+    if (stepping) {
+      printTemp();
+      stepping = false;
+    }
     if (Serial.available()) {
+      stepping = true;
       bool rotate = Serial.parseInt();
       sTurn.stepsRemain = sTurn.turnSteps = Serial.parseInt() - sTurn.pos;
       sTurn.pos = sTurn.pos + sTurn.stepsRemain;
@@ -128,8 +137,6 @@ void loop() {
         fault = true;
         return; 
       }
-      printTemp();
-      Serial.println();
       if (rotate) {
         int a = rTurn.pos * R_STEPS / R_GRANULARITY;
         int b = (rTurn.pos + 1) * R_STEPS / R_GRANULARITY;
