@@ -38,10 +38,6 @@ h2 {
 h1.title {
     font-size: 3em;
 }
-img {
-    float: right;
-    padding-left: 20px;
-}
 
 /* Styles specific to parts of the page */
 header {

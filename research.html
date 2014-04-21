@@ -7,8 +7,10 @@
     <script src="js/lib/skulpt.min.js"></script>
 <script src="js/lib/skulpt-stdlib.js"></script>
 <script src="js/lib/jquery-1.10.2.js"></script>
+<script src="js/lib/ASCIIMathML.js"></script>
 <script src="js/doors.js"></script>
 <script src="js/classify.js"></script>
+    <script src="http://fred-wang.github.io/mathml.css/mspace.js"></script>
 </head>
 <body>
 <header>
@@ -71,19 +73,48 @@ Schutrum et al. (1961) performed experimental research on the air infiltration a
 through revolving doors, under heating and cooling conditions, using the tracer gas technique.
 For more than 40 years, this was the only source of information available for the estimation of
 heating load due to air infiltration through this type of doors.</blockquote>
-<p>Essentially, Schutrum's model estimates air movement as a function of the average revolutions per
-minute the door performs. Since revolving doors do not generally change their rates of rotation
-depending on the number of people passing through them, it seems a bit silly, like saying eating a
-Snickers takes three hours because it contains 13% recommended daily calories.</p>
-<p>Nonetheless, Schutrum's remains the main work on the subject.</p>
+<p>That review presented Schutrums original formula and a refined mathematical model, but no new
+empirical research. For the less mathematicall inclined, Schutrum's work reduces to several grainy
+but useful charts, which the MIT study used for its infiltration estimates:</p>
+<a class="reference external image-reference" href="img/schutrum-infiltration-v-traffic.png"><img alt="Infiltration due to motion of revolving door by people per hour" src="img/schutrum-infiltration-v-traffic.png" style="height: 400px;" /></a>
+<a class="reference external image-reference" href="img/schutrum-seal-leakage.png"><img alt="Infiltration due to revolving door seals by pressure and door orientation" src="img/schutrum-seal-leakage.png" style="height: 400px;" /></a>
+<a class="reference external image-reference" href="img/schutrum-door-use-rates.png"><img alt="Operating time and average revolutions per minut by traffic rate" src="img/schutrum-door-use-rates.png" style="height: 400px;" /></a>
+<a class="reference external image-reference" href="img/schutrum-infiltration-v-rpm.png"><img alt="Infiltration due to motion of door by revolutions per minute" src="img/schutrum-infiltration-v-rpm.png" style="height: 400px;" /></a>
+<p>The first chart allows for estimating air infiltration as a function of traffic rate, when traffic
+rate is higher than 250 people per hour. All charts like this, that estimate air exchange due to
+door motion, deduct leakage through door seals, represented in the second chart as a function of
+pressure, seal condition and whether two or four wings touch the door enclosure.</p>
+<p>For traffic less than 250 people per hour, Schutrum gives us a chart that allows estimating how for
+how much time the door is in motion and, while in motion, at what speed. Interestingly, but not
+surprisingly, it shows higher door speed in places with more traffic. Given that information, plus
+temperature difference, the final chart allows for a second method of estimating infiltration due to
+door motion.</p>
+<blockquote>
+It is unfortunately not entirely clear how to assess the operating time and and speed chart.
+Since I do not have a copy of Schutrum's study, I can only go off those who cited him. The MIT
+study labels the chart &quot;traffic rate of manually operated revolving door,&quot; but Lin Du says
+Schutrum based the data on &quot;field tests... to obtain the performance of motor-operated revolving
+doors.&quot;</blockquote>
+<p>Assuming, in any case, that the operating time and speed chart does represent manually operated door
+motion, we can calculate infiltration from Schutrums graphs two ways. At, say 32 degrees Farenheit
+outside and 72 inside, with 1000 people per hour traversing a revolving door, we could estimate
+infiltration at 610 cubic feet per minute from the first chart. Alternatively, from the second
+chart, take an average rotation speed of 7.1 revolutions per minute for 83% of time; then and
+reading 720 cubic feet per minute from the last chart and multiplying by 83%, we arrive at 600 cubic
+feet per minute.</p>
 </div>
 <div class="section" id="lin-du-s-thesis">
 <h1>Lin Du's thesis</h1>
-<p>Lin Du set out to <a class="reference external" href="http://spectrum.library.concordia.ca/976715/1/MR67309.pdf#page=30&amp;zoom=auto,0,603">replicate Schutrum's work (PDF)</a> in small scale. Unfortunately, the thesis only
-muddies the issue since its results vary wildy from Schutrum's. It still uses the average rotation
-speed method and does not pit a regular door against the revolver. It is useful, however, because it
-comprehensively reviews prior research, concluding, &quot;There is still not sufficient information about
-the amount of the air infiltration due to the motion of the door.&quot;</p>
+<p>Lin Du set out to <a class="reference external" href="http://spectrum.library.concordia.ca/976715/1/MR67309.pdf#page=30&amp;zoom=auto,0,603">replicate Schutrum's work (PDF)</a> in small scale. Unfortunately, the thesis
+muddies the issue since its results vary wildy from Schutrum's. Lin Du reports:</p>
+<blockquote>
+At rotation speed of 3.6 rpm in prototype, the air infiltration rate due to the motion of the
+door from Schutrum et a. (1961) is 325 L/s, while it is only 4.5 L/s from present research...
+there is no other publication available for the for the comparison of the data of air
+flow rate caused by the motion of the revolving door...</blockquote>
+<p>So with empirical testing and comprehensively reviewing research up to 2009, the best this thesis
+could do was conclude, &quot;There is still not sufficient information about the amount of the air
+infiltration due to the motion of the door.&quot;</p>
 </div>
 <div class="section" id="other-work">
 <h1>Other work</h1>
