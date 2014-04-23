@@ -6,6 +6,16 @@ to the serial console with the mmeasured average millivolts.
 With readings at two different known temperatures, you can then use this information
 to calibrate the temperature sensors. Adjust the values in the calibrateTemp() function
 to the measurements, then copy from START to END into your sketch.
+
+Assuming AREF is 3000, as measured on the Arduino, readings from the tmp36 should be
+accurate to a third of a degree Celcius. This is because the tmp36 reports a voltage
+from 0..AREF, which the Arduino divides scales to 0..1023, this therefore reports
+thirds of a degree.
+
+Reference temperatures, however, are measured in whole degrees, just because I did not
+have a more precise thermometer. The absolute reading is, therefore, only considered
+accurate to the degree. Difference between temperatures, however, should be usefully
+precise to thirds of a degree.
 */
 
 // START temp sensor functions
@@ -16,7 +26,7 @@ int millivolts (int pin) {
   return AREF * analogRead(pin) / 1024;
 }
 
-int tenMvPerC[SENSORS];
+int tenMvPerThirdC[SENSORS];
 int offset[SENSORS];
 
 void calibrateTemp () {
@@ -26,13 +36,13 @@ void calibrateTemp () {
   int actualA[SENSORS] = {643, 637, 634, 634}; // Average stable readings at A
   int actualB[SENSORS] = {542, 528, 521, 524};
   for (int pin = 0; pin < SENSORS; pin++) {
-    tenMvPerC[pin] = (actualA[pin] - actualB[pin]) * 10 / (tempA - tempB);
-    offset[pin] = 10 * actualA[pin] - tenMvPerC[pin] * tempA;
-  }  
+    tenMvPerThirdC[pin] = (actualA[pin] - actualB[pin]) * 10 / (tempA * 3 - tempB * 3);
+    offset[pin] = 10 * actualA[pin] - tenMvPerThirdC[pin] * tempA * 3;
+  }
 }
 
-int degreesC (int pin) {
-  return (10 * millivolts(pin) - offset[pin]) / tenMvPerC[pin];
+int thirdDegreesC (int pin) {
+  return (10 * millivolts(pin) - offset[pin]) / tenMvPerThirdC[pin];
 }
 // END temp sensor functions
 
@@ -80,7 +90,7 @@ void setup () {
 void loop () {
   if (readIndex == 0) {
     for (int pin = 0; pin < SENSORS; pin++) {
-      Serial.print(degreesC(pin));
+      Serial.print(thirdDegreesC(pin));
       Serial.print(" ");
     }
     Serial.println();

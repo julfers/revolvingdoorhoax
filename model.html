@@ -18,7 +18,7 @@
 </head>
 <body>
     <p class="fault"></p>
-    <canvas class="revolving" height="400" width="600"></canvas>
+    <canvas class="doors" height="400" width="600"></canvas>
     <canvas class="plot" height="400" width="600"></canvas>
     <fieldset class="monitor">
         <label>
@@ -72,8 +72,8 @@
     ;(function () {
         'use strict'
         var door = new doors.RevolvingDoor(16, 3)
-        var monitor = doors.monitor(door, $('canvas.revolving')[0])
-        var player = doors.player(door, $('canvas.revolving')[0])
+        var monitor = doors.monitor(door, $('canvas.doors')[0])
+        var player = doors.player(door, null, $('canvas.doors')[0])
         var scenario = function () {
             var name = $('input[name=scenario]:checked').val()
             var startEnabled = $('input, button').not(':disabled').attr('disabled', true)
@@ -110,11 +110,13 @@
             if ($('input[name=monitor]:checked').val() === 'server') {
                 player.pause()
                 player = null
-                monitor = doors.monitor(door, $('canvas.revolving')[0])
+                monitor = doors.monitor(door, $('canvas.doors')[0])
             } else {
                 monitor.stop()
                 monitor = null
-                player = doors.player(door, $('canvas.revolving')[0])
+                player = doors.player(door, {
+                    angle: function () { return 0 }
+                }, $('canvas.doors')[0])
             }
             scenario()
         }

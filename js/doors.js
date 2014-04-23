@@ -91,95 +91,114 @@ doors.fault = function (message) {
 ;(function () {
     'use strict'
     /* Set up a renderer that draws a door on a canvas */
-    doors.renderer = function (door, canvas) {
+    var rotation = Math.PI / 2
+    doors.renderer = function (revolver, swinger, canvas) {
         var _ = canvas.getContext('2d')
-        var center = {
-            x: Math.floor(canvas.width / 2),
-            y: Math.floor(canvas.height / 2)
-        }
-        var radius = Math.floor(Math.min(center.x, center.y) / 2)
-        var radialX = function (angle, distance) {
-            // Distance in fractions of radius
-            return center.x + radius * distance * Math.cos(angle)
-        }
-        var radialY = function (angle, distance) {
-            return center.y + radius * distance * Math.sin(angle)
-        }
         var drawRadial = function (angle, start, stop, color) {
             // Angle in radians and start and stop are distance from center in fractions of radius
             // length. Color optional.
             _.beginPath()
-            _.moveTo(radialX(angle, start), radialY(angle, start))
-            _.lineTo(radialX(angle, stop), radialY(angle, stop))
+            _.moveTo(this.polar.x(angle, start), this.polar.y(angle, start))
+            _.lineTo(this.polar.x(angle, stop), this.polar.y(angle, stop))
             _.strokeStyle = color || 'black'
             _.stroke()
         }
-        var drawDoor = function (offset) {
-            // Reverse angles while drawing so door rotates counter-clockwise, (top-down view)
-            // Door enclosure
-            _.strokeStyle = 'black'
-            _.beginPath()
-            _.arc(center.x, center.y, radius, -Math.PI / 4 * 3, -Math.PI / 4)
-            _.stroke()
-            _.beginPath()
-            _.arc(center.x, center.y, radius, Math.PI / 4 * 3, Math.PI / 4, true)
-            _.stroke()
-            // Door
-            for (var cell = 0; cell < 4; cell++) {
-                var centerAngle = -door.angle(cell) + offset
-                var wingAngle = centerAngle + Math.PI / 4
-                // Colors help visually verify the door does not skip angles
-                var wingColor = ['blue', 'red', 'green', 'black'][cell]
-                drawRadial(wingAngle, 0, 1, wingColor)
-                _.textBaseline = 'middle'
-                _.fillText(cell, radialX(centerAngle, 0.7), radialY(centerAngle, 0.7))
-            }
-            // Steps
-            for (var step = 0; step < door.granularity; step++) {
-                var stepAngle = Math.PI * 2 / door.granularity * step
-                drawRadial(stepAngle, 0.95, 1, 'gray')
-            }
-            // Tolerance
-            drawRadial(door.tolerance, 0.3, 1, 'gray')
-            drawRadial(-door.tolerance, 0.3, 1, 'gray')
-            drawRadial(door.tolerance + Math.PI, 0.3, 1, 'gray')
-            drawRadial(-door.tolerance + Math.PI, 0.3, 1, 'gray')
-        }
-        var drawPerson = function (x, y, direction) {
-            _.beginPath()
-            _.moveTo(x, y)
-            _.lineTo(x + 20 * direction, y + 10)
-            _.lineTo(x + 20 * direction, y - 10)
-            _.lineTo(x, y)
-            _.fill()
-        }
-
-        var drawPeople = function (offset) {
-            for (var i = 1; i <= door.arriving; i++) {
-                var distance = radius + radius / 2 * i
-                drawPerson(center.x + distance, center.y, 1)
-            }
-            for (var i = 0; i < 4; i++) {
-                if (door.occupied[i]) {
-                    var angle = -door.angle(i) + offset
-                    drawPerson(
-                        center.x + radius / 2 * Math.cos(angle),
-                        center.y + radius / 2 * Math.sin(angle),
-                        1)
+        var radius = canvas.width / 8
+        var polar = function (door) {
+            return {
+                x: function (angle, distance) {
+                    return door.pivot.x + radius * distance * Math.cos(angle + rotation)
+                },
+                y: function (angle, distance) {
+                    return door.pivot.y + radius * distance * Math.sin(angle + rotation)
                 }
             }
         }
+        var drawPerson = function (x, y) {
+            _.beginPath()
+            var size = radius / 4
+            _.moveTo(x, y - size / 2)
+            _.lineTo(x + size / 2, y + size / 2)
+            _.lineTo(x - size / 2, y + size / 2)
+            _.closePath()
+            _.stroke()
+        }
+        var _r = {
+            pivot: {
+                x: Math.floor(canvas.width / 4),
+                y: Math.floor(canvas.height / 2)
+            },
+            drawRadial: drawRadial,
+            draw: function (offset) {
+                // Reverse angles while drawing so door rotates counter-clockwise, (top-down view)
+                // Enclosure
+                _.strokeStyle = 'black'
+                _.beginPath()
+                _.arc(this.pivot.x, this.pivot.y, radius, -Math.PI / 4 * 3 + rotation,
+                                                          -Math.PI / 4 + rotation)
+                _.stroke()
+                _.beginPath()
+                _.arc(this.pivot.x, this.pivot.y, radius, Math.PI / 4 * 3 + rotation,
+                                                          Math.PI / 4 + rotation, true)
+                _.stroke()
+                // Wings
+                for (var cell = 0; cell < 4; cell++) {
+                    var centerAngle = -revolver.angle(cell) + offset
+                    var wingAngle = centerAngle + Math.PI / 4
+                    // Colors help visually verify the revolver does not skip angles
+                    var wingColor = ['blue', 'red', 'green', 'black'][cell]
+                    this.drawRadial(wingAngle, 0, 1, wingColor)
+                    _.textBaseline = 'middle'
+                    _.textAlign = 'center'
+                    _.fillText(cell, this.polar.x(centerAngle, 0.7), this.polar.y(centerAngle, 0.7))
+                }
+                // Steps
+                for (var step = 0; step < revolver.granularity; step++) {
+                    var stepAngle = Math.PI * 2 / revolver.granularity * step
+                    this.drawRadial(stepAngle, 0.95, 1, 'gray')
+                }
+                // Tolerance
+                this.drawRadial(revolver.tolerance, 0.3, 1, 'gray')
+                this.drawRadial(-revolver.tolerance, 0.3, 1, 'gray')
+                this.drawRadial(revolver.tolerance + Math.PI, 0.3, 1, 'gray')
+                this.drawRadial(-revolver.tolerance + Math.PI, 0.3, 1, 'gray')
+                // People
+                for (var i = 1; i <= revolver.arriving; i++) {
+                    var distance = i / 3 + 1
+                    drawPerson(this.polar.x(0, distance), this.polar.y(0, distance))
+                }
+                for (var i = 0; i < 4; i++) {
+                    if (revolver.occupied[i]) {
+                        var angle = -revolver.angle(i) + offset
+                        drawPerson(this.polar.x(angle, 0.7), this.polar.y(angle, 0.7))
+                    }
+                }
+            }
+        }
+        _r.polar = polar(_r)
+
+        var _s = {
+            pivot: {
+                x: Math.floor(canvas.width / 2),
+                y: Math.floor(canvas.height / 2)
+            },
+            drawRadial: drawRadial,
+            draw: function (offset) {
+                this.drawRadial(swinger.angle(), 0, 1)
+            }
+        }
+        _s.polar = polar(_s)
 
         var draw = function (offset) {
             offset = offset || 0
             _.clearRect(0, 0, canvas.width, canvas.height)
-            drawDoor(offset)
-            drawPeople(offset)
+            _r.draw(offset)
+            _s.draw(offset)
         }
 
         var offsetAngle = function (timeDelta, duration) {
             // Starts at size of step radians and decreases to zero
-            var offset = Math.PI * 2 / door.granularity * (1 - timeDelta / duration)
+            var offset = Math.PI * 2 / revolver.granularity * (1 - timeDelta / duration)
             return offset <= 0 ? 0 : offset
         }
 
@@ -210,8 +229,8 @@ doors.fault = function (message) {
     'use strict'
     /* Set up a player that draws doors on a canvas, allowing playing, pausing and stepping */
 
-    doors.player = function (door, canvas) {
-        var renderer = doors.renderer(door, canvas)
+    doors.player = function (revolver, swinger, canvas) {
+        var renderer = doors.renderer(revolver, swinger, canvas)
         var player = (function () {
             var paused = true
             var play = function (millisPerStep) {
@@ -222,7 +241,7 @@ doors.fault = function (message) {
                     if (paused) {
                         return
                     }
-                    if (door.step()) {
+                    if (revolver.step()) {
                         renderer.step(millisPerStep, function () {
                             player.onstep()
                             requestAnimationFrame(run)
@@ -248,7 +267,7 @@ doors.fault = function (message) {
                     }
                 },
                 step: function (duration, done) {
-                    if (door.step()) {
+                    if (revolver.step()) {
                         renderer.step(duration, done)
                     } else {
                         renderer.draw()
@@ -271,7 +290,7 @@ doors.fault = function (message) {
     /* Create a monitor that renders a door from server-side info */
 
     doors.monitor = function (door, canvas) {
-        var renderer = doors.renderer(door, canvas)
+        var renderer = doors.renderer(door, null, canvas)
         var step = 0
         var stopped = true
         var reset = true
@@ -393,7 +412,7 @@ doors.fault = function (message) {
                         if (i === lines.length - 1) {
                             _.fillStyle = 'black'
                             _.textBaseline = 'middle'
-                            _.fillText(v, x + 2, y)
+                            _.fillText(Math.round(v / 3), x + 2, y)
                         }
                         _.fillStyle = colors[j]
                         _.fillRect(x - xSize, y, xSize, 1)

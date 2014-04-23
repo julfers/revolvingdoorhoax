@@ -23,16 +23,16 @@ Adafruit_StepperMotor revolver = *AFMS.getStepper(R_STEPS, 2);
 Servo swinger;
 
 /*
-Protocol to communicate with controller. Separators for incoming commands can be
-any non-integer value, since all commands are base 10 integers.
+Protocol to communicate with controller. All numbers sent through serial port are base 10.
 
-1. serial port sends a command:
+1. Send temperature readings to serial, 4 integers in thirds of a degree C, then newline
+2. Receive a command:
    [rotate] [swing] [duration]
    `rotate` will be 0 or 1 depending on whether the motor should rotate
    `swing` will be an angle from 0 to 90 degrees to open the swinging door
    `duration` will be how long to take before calling for the next turn (millis), the
      motor adjusts so it takes that long to complete the turn
-2. After running the specified time, call for next commands
+3. After running the specified time, repeat
 
 When incoming data does not contain a delimiter (non-numeric character), Serial.parseInt()
 seems to either wait a little, causing unwarranted delay, or time out and return zero,
@@ -48,7 +48,7 @@ int millivolts (int pin) {
   return AREF * analogRead(pin) / 1024;
 }
 
-int tenMvPerC[SENSORS];
+int tenMvPerThirdC[SENSORS];
 int offset[SENSORS];
 
 void calibrateTemp () {
@@ -58,19 +58,19 @@ void calibrateTemp () {
   int actualA[SENSORS] = {643, 637, 634, 634}; // Average stable readings at A
   int actualB[SENSORS] = {542, 528, 521, 524};
   for (int pin = 0; pin < SENSORS; pin++) {
-    tenMvPerC[pin] = (actualA[pin] - actualB[pin]) * 10 / (tempA - tempB);
-    offset[pin] = 10 * actualA[pin] - tenMvPerC[pin] * tempA;
-  }  
+    tenMvPerThirdC[pin] = (actualA[pin] - actualB[pin]) * 10 / (tempA * 3 - tempB * 3);
+    offset[pin] = 10 * actualA[pin] - tenMvPerThirdC[pin] * tempA * 3;
+  }
 }
 
-int degreesC (int pin) {
-  return (10 * millivolts(pin) - offset[pin]) / tenMvPerC[pin];
+int thirdDegreesC (int pin) {
+  return (10 * millivolts(pin) - offset[pin]) / tenMvPerThirdC[pin];
 }
 // END temp sensor functions
 
 void printTemp() {
   for (int pin = 0; pin < SENSORS; pin++) {
-    Serial.print(degreesC(pin));
+    Serial.print(thirdDegreesC(pin));
     Serial.print(" ");
   }
   Serial.println();
