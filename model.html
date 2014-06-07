@@ -4,22 +4,40 @@
     <script src="js/lib/jquery-1.10.2.js"></script>
     <script src="js/lib/skulpt.min.js"></script>
     <script src="js/lib/skulpt-stdlib.js"></script>
+    <script src="js/lib/requestAnimationFrame.js"></script>
     <script src="js/doors.js"></script>
     <style>
-    .fault {
+    .faults {
+        display: inline-block;
+        height: 400px;
+        padding-left: 0;
+        padding-right: 40px;
+        white-space: nowrap;
+        overflow: auto;
+
         color: red;
-    }
-    canvas {
-    }
-    .scenarios li {
         list-style: none;
+    }
+    .scenarios th:first-child {
+        width: 300px;
+    }
+    .chart {
+        display: inline-block;
+    }
+    th {
+        text-align: left;
     }
     </style>
 </head>
 <body>
-    <p class="fault"></p>
-    <canvas class="doors" height="400" width="600"></canvas>
-    <canvas class="plot" height="400" width="600"></canvas>
+    <canvas class="doors" height="400" width="600">
+        <div>Revolving door diagram that rotates when people arrive</div>
+        <div>Swinging door diagram that swings when people arrive</div>
+    </canvas>
+    <div class="chart">
+        <!-- populated from chart.html -->
+    </div>
+    <ol class="faults"></ol>
     <fieldset class="monitor">
         <label>
             <input type="radio" name="monitor" value="client" checked>
@@ -38,102 +56,142 @@
     </fieldset>
     <fieldset class="people-controls">
         <legend>People controls</legend>
-        <button class="arrive">Arrive</button>
+        <button class="arrive revolver">Arrive at revolver</button>
+        <button class="arrive swinger">Arrive at swinger</button>
     </fieldset>
     <fieldset class="scenarios">
         <legend>Scenarios</legend>
-        <ul>
-            <li>
-                <label>
-                    <input type="radio" name="scenario" value="manual" checked>
-                    <span>Manual arrival</span>
-                </label>
-            </li>
-            <li>
-                <label>
-                    <input type="radio" name="scenario" value="early-arrival">
-                    <span>Early arrival</span>
-                </label>
-                <p> Two people arrive, the second is soon enough to catch the next cell after the
-                    first person.
-                </p>
-            </li>
-            <li>
-                <label>
-                    <input type="radio" name="scenario" value="late-arrival">
-                    <span>Late arrival</span>
-                </label>
-                <p> Two people arrive, the second is too late to catch the next cell and waits.
-                </p>
-            </li>
-        </ul>
+        <table>
+            <thead>
+                <tr>
+                    <th>Scenario</th>
+                    <th>Revolver</th>
+                    <th>Swinger</th>
+                    <th>Pattern</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="title"></td>
+                    <td>
+                        <input type="radio" name="revolver">
+                    </td>
+                    <td>
+                        <input type="radio" name="swinger">
+                    </td>
+                    <td>
+                        <canvas height="20" width="100">
+                            <ol></ol>
+                        </canvas>
+                    </td>
+                    <td class="description"></td>
+                </tr>
+            </tbody>
+        </table>
     </fieldset>
     <script>
     ;(function () {
         'use strict'
-        var door = new doors.RevolvingDoor(16, 3)
-        var monitor = doors.monitor(door, $('canvas.doors')[0])
-        var player = doors.player(door, null, $('canvas.doors')[0])
-        var scenario = function () {
-            var name = $('input[name=scenario]:checked').val()
+        var model = {
+            revolver: new doors.RevolvingDoor(16, 3),
+            swinger: new doors.SwingingDoor(8, 7)
+        }
+        var monitor = doors.monitor(model.revolver, model.swinger, $('canvas.doors')[0])
+        var player = doors.player(model.revolver, model.swinger, $('canvas.doors')[0])
+        var withDisabling = function (fn) {
             var startEnabled = $('input, button').not(':disabled').attr('disabled', true)
+            fn().always(function () {
+                startEnabled.removeAttr('disabled')
+            })
+        }
+
+        var scenarios = {}
+        
+        var loadScenario = function (doorName) {
+            var name = $('.scenarios input[name=' + doorName + ']:checked').val()
             if (player) {
-                $.get('scenarios/' + encodeURIComponent(name) + '.txt', null, null, 'text')
-                .done(function (stepsFile) {
-                    // Consider any line in the steps file that begins with a number an instruction
-                    // to have that number of people arrive at that step, ignoring anything else
-                    var steps = $.map(stepsFile.split(/^/m), function (line) {
-                        return parseInt(line, 10)
-                    })
-                    steps = $.grep(steps, function (step) {
-                        return !isNaN(step)
-                    })
-                    var step = 0
-                    player.onstep = function () {
-                        door.arriving += steps[step]
-                        step = (step + 1) % steps.length
-                    }
-                    player.play(millisPerStep())
-                    startEnabled.removeAttr('disabled')
-                })
+                // Consider any line in the steps file that begins with a number an instruction
+                // to have that number of people arrive at that step, ignoring anything else
+                var arrivals = scenarios[name].arrivals
+                var step = 0
+                player.onstep[doorName] = function () {
+                    model[doorName].arriving += arrivals[step]
+                    step = (step + 1) % arrivals.length
+                }
+                // TODO: changing scenario should not unpause
+                player.play(millisPerStep())
             } else {
-                monitor.load(name, function () {
-                    startEnabled.removeAttr('disabled')
-                })
+                return monitor[doorName].load(name)
             }
         }
         var millisPerStep = function () {
-            var turnsPerSecond = 0.2
-            return 1000 / (door.granularity * turnsPerSecond)
+            return 625 // 6 rpm for a revolving door with granularity 16
         }
         var start = function () {
             if ($('input[name=monitor]:checked').val() === 'server') {
                 player.pause()
                 player = null
-                monitor = doors.monitor(door, $('canvas.doors')[0])
+                $('.player-controls button').attr('disabled', true)
+                monitor = doors.monitor(model.revolver, model.swinger, $('canvas.doors')[0])
             } else {
                 monitor.stop()
                 monitor = null
-                player = doors.player(door, {
-                    angle: function () { return 0 }
-                }, $('canvas.doors')[0])
+                $('button.pause').removeAttr('disabled')
+                player = doors.player(model.revolver, model.swinger, $('canvas.doors')[0])
+                player.play(millisPerStep())
             }
-            scenario()
+            loadScenario('revolver')
+            loadScenario('swinger')
         }
-        start()
 
-        $('input[name=monitor]').on('change', function () {
-            start()
+        ;(function () {
+            var rowTemplate = $('fieldset.scenarios tbody tr').remove()
+            var loaders = $.map([
+                'manual',
+                'early-arrival',
+                'late-arrival',
+                '10ppm-apart',
+                '10ppm-cluster'
+            ], function (name) {
+                var row = rowTemplate.clone().appendTo('.scenarios tbody')
+                row.find('input').attr('value', name)
+                    .on('change', function () {
+                        loadScenario(this.name)
+                    })
+                if (name === 'manual') {
+                    row.find('input').prop('checked', true)
+                }
+                return $.get('scenarios/' + name + '.txt', null, null, 'text')
+                    .done(function (stepsFile) {
+                        var scenario = doors.scenario(stepsFile)
+                        scenarios[name] = scenario
+                        row.find('td.title').text(scenario.title)
+                        row.find('td.description').text(scenario.description)
+                    })
+            })
+            withDisabling(function () {
+                return $.when.apply($, loaders).done(function (a) {
+                    start()
+                })
+            })
+        })()
+
+        $('input[name=monitor]').on('change', start)
+
+        $.each(model, function (doorName, door) {
+            $('button.arrive.' + doorName).each(function () {
+                $(this).on('click', function () {
+                    if (monitor) {
+                        monitor[doorName].arrive()
+                    } else {
+                        ++door.arriving
+                        player.draw()
+                    }
+                })
+            })
         })
 
-        $('button.arrive').on('click', function () {
-            if (monitor) {
-                monitor.arrive()
-            } else {
-                ++door.arriving
-                player.draw()
-            }
-        })
         $('button.play').on('click', function () {
             player.play(millisPerStep())
             $('button.pause').removeAttr('disabled')
@@ -151,11 +209,10 @@
                 enabled.removeAttr('disabled')
             })
         })
-        $('input[name=scenario]').on('change', function () {
-            scenario()
-        })
 
-        doors.plot('/temperature', $('canvas.plot')[0], 15000)
+        $('.chart').load('chart.html', function () {
+            doors.chart($('.chart'), '/results', '/scenarios', 15000)
+        })
     })()
     </script>
 </body>

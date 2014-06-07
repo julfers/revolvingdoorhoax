@@ -1,0 +1,52 @@
+<style>
+/* Charts */
+.chart {
+    position: relative;
+}
+label.position {
+    display: block;
+}
+label.position span {
+    position: fixed;
+    left: -999px;
+}
+label.position input {
+    padding: 0;
+    width: 600px; /* Same as canvas width */
+}
+th.temps {
+    display: block;
+    position: fixed;
+    left: -999px;
+}
+.temps ol {
+    padding-left: 0;
+    list-style-type: none;
+}
+.temps li {
+    background-color: rgba(255, 255, 255, 0.75);
+    border-radius: 999px;
+    display: inline-block;
+}
+</style>
+<canvas class="plot" height="400" width="600"></canvas>
+<label class="position">
+    <span>Values at position</span>
+    <input type="range" disabled>
+</label>
+<table class="points">
+    <thead><tr>
+        <th>Time</th>
+        <th class="temps">Temps</th>
+        <th>Revolving door</th>
+        <th>Swinging door</th>
+    </tr></thead>
+    <tbody>
+        <tr>
+            <td class="time"></td>
+            <td class="temps"><ol></ol></td>
+            <td class="revolver arrivals"></td>
+            <td class="swinger arrivals"></td>
+        </tr>
+    </tbody>
+</table>

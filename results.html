@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="js/lib/jquery-1.10.2.js"></script>
+    <script src="js/lib/skulpt.min.js"></script>
+    <script src="js/lib/skulpt-stdlib.js"></script>
+    <script src="js/doors.js"></script>
+</head>
+<body>
+    <div class="chart">
+        <!-- filled with content from chart.html -->
+    </div>
+    <script>
+    ;(function () {
+        'use strict'
+        $('.chart').load('chart.html', function () {
+            doors.chart($('.chart'), '/results/051100-0855.csv', '/results/051100-0855-scenarios.csv')
+        })
+    })()
+    </script>
+</body>

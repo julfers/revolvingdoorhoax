@@ -1,4 +1,4 @@
-/* General purpose styles */
+/* General purpose */
 *, *:before, *:after {
     -moz-box-sizing: border-box;
     -webkit-box-sizing: border-box;
@@ -38,8 +38,11 @@ h2 {
 h1.title {
     font-size: 3em;
 }
+th {
+    text-align: left;
+}
 
-/* Styles specific to parts of the page */
+/* Specific parts of the page */
 header {
     position: relative;
     background-image: url('../img/banner.png');

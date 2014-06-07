@@ -9,38 +9,59 @@
     // convert them back and forth. I would think Skulpt would already have something like this
     // available, but it wasn't obvious.
     var jsToPy = function (jsVal) {
-        if (typeof jsVal.length === 'number') {
+        var skType = {
+            'boolean': Sk.builtin.bool,
+            'number': Sk.builtin.nmber,
+            'string': Sk.builtin.str
+        }[typeof jsVal]
+        if (skType) {
+            return skType(jsVal)
+        } else if (typeof jsVal.length === 'number') {
             var pyList = []
             for (var i = 0; i < jsVal.length; i++) {
                 pyList[i] = jsToPy(jsVal[i])
             }
             return Sk.builtin.list(pyList)
         } else {
-            return {
-                'number': Sk.builtin.nmber,
-                'boolean': Sk.builtin.bool
-            }[typeof jsVal](jsVal)
+            console.error(jsVal)
+            throw 'Unable to convert value to Skulpt type' 
         }
     }
     var pyToJs = function (pyVal) {
+        if (pyVal instanceof Sk.builtin.dict) {
+            var jsDict = {}
+            for (var k in pyVal) {
+                if (pyVal[k].items) {
+                    var item = pyVal[k].items[0]
+                    jsDict[item.lhs.v] = pyToJs(item.rhs)
+                }
+            }
+            return jsDict
+        }
         if (pyVal instanceof Sk.builtin.list) {
             var jsArray = []
             for (var i = 0; i < pyVal.v.length; i++) {
                 jsArray[i] = pyToJs(pyVal.v[i])
             }
             return jsArray
-        } else {
-            // This probably fails in many cases, but I don't know enough about how Skulpt works
-            // to simply and reliably check for them
-            return pyVal.v
         }
+        // This probably fails in many cases, but I don't know enough about how Skulpt works to
+        // simply and reliably check for them
+        return pyVal.v
     }
 
     $.ajax('doors.py', {dataType: 'text', async: false})
     .done(function (source) {
         var pyModule = Sk.importMainWithBody('doors', false, source)
         var jsModule = {}
-        var pyToJsApi = function (classname, properties, methods) {
+        var pyFunctionToJs = function (pyObj, name) {
+            return function () {
+                var fn = pyObj.tp$getattr(name)
+                var r = Sk.misceval.apply(fn, null, null, null, jsToPy(arguments).v)
+                return pyToJs(r)
+            }
+        }
+        var pyClassToJs = function (classname, properties, methods) {
             // Mimic a Python API in JavaScript. Warning: barely good enough for the simple
             // doors classes
             jsModule[classname] = function () {
@@ -62,12 +83,12 @@
                     }
                     pyPropsToJs()
                     $.each(methods, function (i, name) {
+                        var fn = pyFunctionToJs(pyObj, name)
                         jsObj[name] = function () {
                             jsPropsToPy()
-                            var fn = pyObj.tp$getattr(name)
-                            var r = Sk.misceval.apply(fn, null, null, null, jsToPy(arguments).v)
+                            var r = fn.apply(this, arguments)
                             pyPropsToJs()
-                            return pyToJs(r)
+                            return r
                         }
                     })
                 } else {
@@ -76,15 +97,24 @@
             }
         }
 
-        pyToJsApi('RevolvingDoor',
+        pyClassToJs('RevolvingDoor',
             ['granularity', 'tolerance', 'arriving', 'occupied', 'position'],
             ['step', 'angle'])
+        pyClassToJs('SwingingDoor',
+            ['granularity', 'open', 'arriving', 'occupied', 'position'],
+            ['step', 'angle'])
+        jsModule.scenario = pyFunctionToJs(pyModule, 'scenario')
+        jsModule.split = pyFunctionToJs(pyModule, 'split')
         window.doors = jsModule
     })
 })()
 
 doors.fault = function (message) {
-    $('<span></span>').text(message).appendTo('.fault')
+    $('<li></li>').text(message).appendTo('.faults')
+}
+doors.fatal = function (message) {
+    message = 'Fatal: ' + message;
+    doors.fault(message)
     throw message
 }
 
@@ -129,6 +159,7 @@ doors.fault = function (message) {
                 y: Math.floor(canvas.height / 2)
             },
             drawRadial: drawRadial,
+            stepAngle: Math.PI * 2 / revolver.granularity,
             draw: function (offset) {
                 // Reverse angles while drawing so door rotates counter-clockwise, (top-down view)
                 // Enclosure
@@ -155,7 +186,7 @@ doors.fault = function (message) {
                 // Steps
                 for (var step = 0; step < revolver.granularity; step++) {
                     var stepAngle = Math.PI * 2 / revolver.granularity * step
-                    this.drawRadial(stepAngle, 0.95, 1, 'gray')
+                    this.drawRadial(stepAngle, 0.95, 1)
                 }
                 // Tolerance
                 this.drawRadial(revolver.tolerance, 0.3, 1, 'gray')
@@ -179,41 +210,74 @@ doors.fault = function (message) {
 
         var _s = {
             pivot: {
-                x: Math.floor(canvas.width / 2),
+                x: Math.floor(canvas.width / 4 * 3),
                 y: Math.floor(canvas.height / 2)
             },
             drawRadial: drawRadial,
+            stepAngle: Math.PI / 2 / swinger.granularity,
             draw: function (offset) {
-                this.drawRadial(swinger.angle(), 0, 1)
+                // Door
+                var angle = -swinger.angle() + Math.PI / 2 + offset
+                this.drawRadial(angle, 0, 1)
+                // Steps
+                for (var step = 0; step <= swinger.open; step++) {
+                    var stepAngle = Math.PI / 2 - Math.PI / 2 * step / swinger.granularity
+                    this.drawRadial(stepAngle, 0.95, 1)
+                }
+                // People
+                var waiting = swinger.arriving
+                if (swinger.occupied[0]) {
+                    if (offset === 0) { // door is looks open enough to enter
+                        var middleAngle = Math.PI / 4
+                        drawPerson(this.polar.x(middleAngle, 0.7), this.polar.y(middleAngle, 0.7))
+                    } else {
+                        ++waiting
+                    }
+                }
+                for (var i = 0; i < waiting; i++) {
+                    var personX = this.pivot.x - radius / 2
+                    var personY = this.pivot.y + radius * (i / 3 + 1)
+                    drawPerson(personX, personY)
+                }
             }
         }
         _s.polar = polar(_s)
 
-        var draw = function (offset) {
-            offset = offset || 0
+        var draw = function (rOffset, sOffset) {
             _.clearRect(0, 0, canvas.width, canvas.height)
-            _r.draw(offset)
-            _s.draw(offset)
+            _r.draw(rOffset || 0)
+            _s.draw(sOffset || 0)
         }
 
-        var offsetAngle = function (timeDelta, duration) {
-            // Starts at size of step radians and decreases to zero
-            var offset = Math.PI * 2 / revolver.granularity * (1 - timeDelta / duration)
-            return offset <= 0 ? 0 : offset
-        }
-
+        draw()
+        var now = (function () {
+            var loaded = Date.now()
+            return 
+        })()
         return {
             draw: draw,
-            step: function (duration, done) {
+            step: function (duration, rSteps, sSteps, done) {
                 if (duration < 0) {
-                    doors.fault('Illegal duration ' + duration)
+                    doors.fatal('Illegal duration ' + duration)
                 }
-                var startTime = performance.now()
+                // Android browser, as of Android 4.1.1, at least, seems to implement
+                // requestAnimationFrame, but not performance.now. I don't know, in that case,
+                // whether the time parameter to requestAnimationFrame is based on
+                // window.performance or not, so don't set start using Date.now, just in case.
+                // Assume browsers that implement performance.now also use it as the parameter to
+                // requestAnimationFrame.
+                var startTime = performance && performance.now ? performance.now() : null
+                var offsetAngle = function (door, steps, time) {
+                    // Starts at size of step radians and decreases to zero
+                    var offset = door.stepAngle * steps * (1 - (time - startTime) / duration)
+                    return steps > 0 ? Math.max(0, offset) : Math.min(0, offset)
+                }
                 var tick = function (time) {
-                    var offset = offsetAngle(time - startTime, duration)
-                    draw(offset)
-                    if (offset === 0) {
-                        draw()
+                    startTime = startTime || time
+                    var rOffset = offsetAngle(_r, rSteps, time)
+                    var sOffset = offsetAngle(_s, sSteps, time)
+                    draw(rOffset, sOffset)
+                    if (!rOffset && !sOffset && time - startTime >= duration) {
                         done()
                     } else {
                         requestAnimationFrame(tick)
@@ -241,19 +305,13 @@ doors.fault = function (message) {
                     if (paused) {
                         return
                     }
-                    if (revolver.step()) {
-                        renderer.step(millisPerStep, function () {
-                            player.onstep()
-                            requestAnimationFrame(run)
-                        })
-                    } else {
-                        renderer.draw()
-                        setTimeout(function () {
-                            player.onstep()
-                            renderer.draw()
-                            requestAnimationFrame(run)
-                        }, millisPerStep)
-                    }
+                    var rSteps = revolver.step()
+                    var sSteps = swinger.step()
+                    renderer.step(millisPerStep, rSteps, sSteps, function () {
+                        player.onstep.revolver()
+                        player.onstep.swinger()
+                        requestAnimationFrame(run)
+                    })
                 })()
             }
             return {
@@ -267,17 +325,12 @@ doors.fault = function (message) {
                     }
                 },
                 step: function (duration, done) {
-                    if (revolver.step()) {
-                        renderer.step(duration, done)
-                    } else {
-                        renderer.draw()
-                        setTimeout(function () {
-                            player.onstep()
-                            done()
-                        }, duration)
-                    }
+                    renderer.step(duration, revolver.step(), swinger.step(), done)
                 },
-                onstep: $.noop,
+                onstep: {
+                    revolver: $.noop,
+                    swinger: $.noop
+                },
                 draw: renderer.draw
             }
         })()
@@ -289,14 +342,27 @@ doors.fault = function (message) {
     'use strict'
     /* Create a monitor that renders a door from server-side info */
 
-    doors.monitor = function (door, canvas) {
-        var renderer = doors.renderer(door, null, canvas)
+    doors.monitor = function (revolver, swinger, canvas) {
+        var renderer = doors.renderer(revolver, swinger, canvas)
         var step = 0
         var stopped = true
         var reset = true
+        var model = {
+            revolver: revolver,
+            swinger: swinger
+        }
+        var priorCommands
         var nextStep = function () {
             $.getJSON('/step')
             .done(function (commands) {
+                var sync = function () {
+                    step = commands.step
+                    $.each(model, function (doorName, door) {
+                        $.each(['arriving', 'occupied', 'position'], function (i, k) {
+                            door[k] = commands[doorName][k]
+                        })
+                    })
+                }
                 if (stopped) {
                     return
                 }
@@ -305,67 +371,73 @@ doors.fault = function (message) {
                     // switching from local playback to monitoring the door server. Since the
                     // physical door has no "reset" capability, tracking it helps test that the
                     // server does not get out of sync.
-                    step = commands.step
-                    door.arriving = commands.arriving
-                    door.occupied = commands.occupied
-                    door.position = commands.position
+                    sync()
                     reset = false
                 }
-                if (commands.step === 0 && step > 0) {
-                    // switching to the next scenario
-                    step = 0
+                if (commands.duration === 0) {
+                    // Sometimes a request falls right on the boundary, so the next step time passed
+                    // but the timer hasn't advanced the model yet
+                    nextStep()
+                    return
                 }
                 if (commands.step !== step) {
+                    console.error(priorCommands, commands)
                     doors.fault('Missed step ' + step)
+                    sync()
                 }
+                priorCommands = commands
                 ++step
-                door.arriving += commands.arrived
-                var stepped = door.step()
-                if (commands.rotate) {
-                    if (!stepped) {
-                        doors.fault('Door out of sync')
+                var renderArgs = [commands.duration]
+                $.each(model, function (doorName, door) {
+                    door.arriving += commands[doorName].arrived
+                    var steps = door.step()
+                    renderArgs.push(steps)
+                    if (doorName === 'revolver' && commands.revolver.rotate !== steps) {
+                        doors.fatal('Revolver out of sync')
                     }
-                    renderer.step(commands.duration, function () {
-                        nextStep()
-                    })
-                } else {
-                    setTimeout(nextStep, commands.duration)
-                    renderer.draw()
-                }
+                    if (doorName === 'swinger' && commands.swinger.angle !== swinger.angle()) {
+                        doors.fatal('Swinger out of sync')
+                    }
+                })
+                renderArgs.push(nextStep)
+                renderer.step.apply(renderer, renderArgs)
             })
             .fail(function (xhr) {
-                doors.fault('Step request failed: ' + xhr.status)
+                doors.fatal('Step request failed: ' + xhr.status)
             })
         }
+        var controls = function (doorName) {
+            return {
+                arrive: function () {
+                    $.post('/arrive/' + doorName)
+                    .done(function () {
+                        ++model[doorName].arriving
+                        renderer.draw()
+                    })
+                    .fail(function (xhr) {
+                        doors.fault('Arrival command failed: ' + xhr.status)
+                    })
+                },
+                load: function (scenario) {
+                    return $.post('/start/' + doorName + '/' + scenario)
+                    .done(function (status) {
+                        if (stopped) {
+                            stopped = false
+                            reset = true
+                            nextStep()
+                        }
+                    })
+                    .fail(function (xhr) {
+                        doors.fault('Start request failed: ' + xhr.status)
+                    })
+                }
+            }
+        }
         return {
-            arrive: function () {
-                $.ajax({type: 'post', url: '/arrive'})
-                .fail(function (xhr) {
-                    doors.fault('Arrival request failed: ' + xhr.status)
-                })
-                ++door.arriving
-                renderer.draw()
-            },
+            revolver: controls('revolver'),
+            swinger: controls('swinger'),
             stop: function () {
                 stopped = true
-            },
-            load: function (scenario, done) {
-                $.ajax({type: 'post', url: '/start/' + scenario, contentType: 'application/json',
-                    data: JSON.stringify({
-                        turns_per_sec: 0.2
-                    })
-                })
-                .done(function (status) {
-                    if (stopped) {
-                        stopped = false
-                        reset = true
-                        nextStep()
-                    }
-                    done()
-                })
-                .fail(function (xhr) {
-                    doors.fault('Start request failed: ' + xhr.status)
-                })
             },
             draw: renderer.draw
         }
@@ -374,68 +446,294 @@ doors.fault = function (message) {
 
 ;(function () {
     'use strict'
-    doors.plot = function (url, canvas, interval) {
+    /* Plotting and data loading functionality for charting */
+    doors.plot = function (canvas, resultsUrl, scenariosUrl, interval) {
         var _ = canvas.getContext('2d')
 
-        var render = function (csv) {
-            _.clearRect(0, 0, canvas.width, canvas.height)
-            var maxY = 0
-            var lines = $.grep(csv.split(/$/gm), function (line) {
+        var csv = function (text) {
+            var lines = $.grep(text.split(/$/gm), function (line) {
                 return !/^\s*$/.test(line)
             })
-            lines = $.map(lines, function (line) {
+            return $.map(lines, function (line) {
                 return [$.map(line.split(/,/g), function (x, i) {
-                    var v = parseInt(x, 10)
-                    if (i > 1) {
-                        maxY = maxY < v ? v : maxY
+                    if (/\d+(?:\.\d+)/.test(x)) {
+                        return parseFloat(x)
                     }
-                    return v
+                    return x
                 })] // jQuery.map flattens arrays one level
             })
-            var minX = lines[0][0]
-            var maxX = lines[lines.length - 1][0]
-            var scaleX = Math.min((canvas.width * 0.95) / (maxX - minX), canvas.width * 0.01)
-            var scaleY = (canvas.height * 0.95) / maxY
-            for (var gridLine = minX + 10 * 60; gridLine < maxX; gridLine += 10 * 60) {
-                // Gridlines every ten minutes, dark line every hour
-                _.fillStyle = (gridLine - minX) % (10 * 60 * 6) === 0 ? 'black' : 'lightgray'
-                var x = Math.floor(gridLine * scaleX)
-                _.fillRect(x, 0, 1, scaleY)
+        }
+
+        var gutter = {
+            x: 0,
+            y: Math.floor(canvas.height * 0.05)
+        }
+        var fullResults, fullScenarios, results, scenarios
+        var scale = {
+            x: null,
+            y: null
+        }
+        var range = {
+            x: {},
+            y: {}
+        }
+        var scaled = function (v, axis) {
+            return Math.floor((v - range[axis].min) * scale[axis] + gutter[axis])
+        }
+        var pos = {
+            x: function (time) {
+                return scaled(time, 'x')
+            },
+            y: function (temp) {
+                return canvas.height - scaled(temp, 'y')
             }
-            var colors = [null, 'gray', 'indigo', 'blue', 'indianred', 'maroon']
-            var xSize = Math.floor(Math.max(canvas.width * 0.95 / lines.length, 1))
-            $.each(lines, function (i, line) {
-                var x = Math.floor((line[0] - minX) * scaleX - scaleX / 2)
-                $.each(line, function (j, v) {
-                    var y = Math.floor(canvas.height - v * scaleY - scaleY / 2)
-                    if (j != 0) {
-                        if (i === lines.length - 1) {
-                            _.fillStyle = 'black'
-                            _.textBaseline = 'middle'
-                            _.fillText(Math.round(v / 3), x + 2, y)
-                        }
-                        _.fillStyle = colors[j]
-                        _.fillRect(x - xSize, y, xSize, 1)
-                        _.fillStyle = 'lightgray'
-                        _.fillRect(x - xSize, Math.floor(y - scaleY / 2), xSize, 1)
-                        _.fillRect(x - xSize, Math.floor(y + scaleY / 2), xSize, 1)
-                    }
+        }
+
+        var render = function () {
+            if (!results.length) {
+                return
+            }
+            _.clearRect(0, 0, canvas.width, canvas.height)
+
+            range.x.min = results[0][0]
+            range.x.max = results[results.length - 1][0]
+            range.y = {}
+            $.each(results, function (i, row) {
+                var min = Math.min.apply(Math, row.slice(3))
+                var max = Math.max.apply(Math, row.slice(3))
+                range.y.min = range.y.min == null ? min : Math.min(range.y.min, min)
+                range.y.max = range.y.max == null ? max : Math.max(range.y.max, max)
+            })
+
+            scale.x = Math.min((canvas.width - gutter.x) / ((range.x.max - range.x.min) || 1),
+                               canvas.width * 0.01)
+            scale.y = (canvas.height - gutter.y * 2) / ((range.y.max - range.y.min) || 1)
+
+            // Gridlines every ten minutes, dark line every hour
+            for (var gridLine = range.x.min + 10 * 60; gridLine < range.x.max; gridLine += 10 * 60) {
+                _.fillStyle = (gridLine - range.x.min) % (10 * 60 * 6) === 0 ? 'black' : 'lightgray'
+                _.fillRect(pos.x(gridLine), 0, 1, scale.y)
+            }
+
+            // Scenario changes
+            $.each(scenarios, function (i, row) {
+                _.fillStyle = 'gray'
+                _.fillRect(pos.x(row[0]), 0, 1, canvas.height)
+            })
+
+            // Results
+            var xSize = Math.ceil(Math.max(scale.x, 1))
+            $.each(results, function (i, row) {
+                var x = pos.x(row[0])
+
+                // Arrivals
+                $.each(row.slice(1, 3), function (j, ppm) {
+                    var direction = j * 2 - 1 // up for revolver, down for swinger
+                    var offset = Math.floor(direction * ppm * scale.y / 2)
+                    var midY = Math.floor((canvas.height - gutter.x) / 2 + gutter.x)
+                    _.fillStyle = 'lightgray'
+                    _.fillRect(x - xSize, midY + direction, xSize, offset)
+                })
+
+                // Temperature
+                $.each(row.slice(3), function (j, temp) {
+                    var y = pos.y(temp)
+                    _.fillStyle = ['indigo', 'blue', 'indianred', 'maroon'][j]
+                    // Difference between these indicates precision
+                    _.fillRect(x - xSize, Math.floor(y - scale.y / 2), xSize, 1)
+                    _.fillRect(x - xSize, Math.floor(y + scale.y / 2), xSize, 1)
                 })
             })
         }
 
+        var fullSlice = function () {
+            results = fullResults
+            scenarios = fullScenarios
+        }
+        var slice = fullSlice
+
+        var index = function (x) {
+            var pos = Math.floor(x / (canvas.width - gutter.x) * results.length)
+            if (pos > results.length - 1) {
+                return results.length - 1
+            }
+            if (pos < 0) {
+                return 0
+            }
+            return pos
+        }
+
+        var onupdate = []
+        var plot = {
+            point: function (x) {
+                /* Given a coordinate relative to canvas dimensions, return the data point that
+                   corresponds */
+                var p = results[index(x)]
+                return {
+                    time: p[0],
+                    arrivals: {
+                        revolver: p[1],
+                        swinger: p[2]
+                    },
+                    temps: p.slice(3)
+                }
+            },
+            range: function (x) {
+                /* Given a coordinate relative to canvas dimensions, return the scenario range that
+                   overlaps that coordinate. When given no x-coordinate, return the chart's entire
+                   range.
+                */
+                if (x == null) {
+                    return {
+                        min: results[0][0],
+                        max: results[results.length - 1][0]
+                    }
+                }
+                var p = results[index(x)]
+                var running = {}
+                var range = {
+                    min: 0,
+                    max: null
+                }
+                $.each(scenarios, function (i, s) {
+                    running[s[1]] = s[2]
+                    if (s[0] < p[0]) {
+                        range.min = s[0]
+                        $.extend(range, running)
+                    }
+                    if (range.max == null && s[0] > p[0]) {
+                        range.max = s[0]
+                    }
+                })
+                return range
+            },
+            slice: function (range) {
+                if (!range) {
+                    slice = fullSlice
+                } else {
+                    var s = function (a) {
+                        return $.grep(a, function (v) {
+                            return v[0] >= range.min && (range.max == null || v[0] <= range.max)
+                        })
+                    }
+                    slice = function () {
+                        results = s(results)
+                        scenarios = s(scenarios)
+                    }
+                }
+                slice()
+                render()
+            },
+            onupdate: function (fn) {
+                onupdate.push(fn)
+            },
+            pos: pos
+        }
+
+        var onready = []
         var tick = function () {
-            $.get(url, null, null, 'text')
-            .done(function (csv) {
-                render(csv)
+            return $.when(
+                $.get(resultsUrl, null, null, 'text'),
+                $.get(scenariosUrl, null, null, 'text'))
+            .done(function (resultsReply, scenariosReply) {
+                fullResults = csv(resultsReply[0])
+                fullScenarios = csv(scenariosReply[0])
+                slice()
+                render()
                 if (interval) {
                     setTimeout(tick, interval)
                 }
+                while (onready.length) {
+                    onready.shift()(plot)
+                }
+                $.each(onupdate, function (i, fn) {
+                    fn()
+                })
             })
-            .fail(function (xhr) {
-                console.error(xhr.status)
+            .fail(function () {
+                doors.fatal('No results data')
             })
         }
         tick()
+        return {
+            onready: function (fn) {
+                onready.push(fn)
+            }
+        }
+    }
+})()
+
+;(function () {
+    'use strict'
+    /* An interactive chart using the markup structure from chart.html */
+    doors.chart = function (container, resultsUrl, scenariosUrl, interval) {
+        container = $(container)
+
+        doors.plot($(container).find('canvas')[0], resultsUrl, scenariosUrl, interval)
+        .onready(function (chart) {
+            var timeText = function (seconds) {
+                seconds = Math.round(seconds)
+                var hours = Math.floor(seconds / 60 / 60)
+                seconds -= hours * 60 * 60
+                var minutes = Math.floor(seconds / 60)
+                return hours + ':' + ('00' + minutes).slice(-2)
+            }
+            var displayValues = function (position) {
+                var point = chart.point(position)
+                var row = container.find('table.points tbody tr').last()
+                row.find('.time').text(timeText(point.time))
+                row.find('.temps ol').empty()
+                $.each(point.temps, function (i, temp) {
+                    $('<li></li>').text(Math.round(temp / 3))
+                        .prependTo(row.find('.temps ol'))
+                })
+                container.find('table.points .temps li').each(function (i) {
+                    var li = $(this)
+                    li.css({
+                        position: 'absolute',
+                        top: chart.pos.y(point.temps[i]) - li.height() * 1.5,
+                        left: chart.pos.x(point.time)
+                    })
+                })
+                $.each(point.arrivals, function (k, v) {
+                    row.find('.arrivals.' + k).text(v)
+                })
+            }
+
+            chart.onupdate(function () {
+                displayValues(container.find('.position input').val())
+            })
+
+            var canvasX = function (event) { // X position relative to canvas
+                return event.originalEvent.pageX - container.find('canvas.plot').offset().left
+            }
+
+            container.find('.position input')
+                .attr({
+                    min: 0,
+                    max: container.find('canvas.plot').attr('width')
+                })
+                .val(container.find('canvas.plot').attr('width'))
+                .on('change', function () {
+                    displayValues($(this).val())
+                })
+                .removeAttr('disabled')
+            container.find('canvas.plot').on('mousemove', function (event) {
+                container.find('.position input')
+                    .val(canvasX(event))
+                    .trigger('change')
+            })
+
+            var zoomIn = function (event) {
+                var range = chart.range(canvasX(event))
+                chart.slice(range)
+                container.find('canvas.plot').one('click', zoomOut)
+            }
+            var zoomOut = function () {
+                chart.slice()
+                container.find('canvas.plot').one('click', zoomIn)
+            }
+            container.find('canvas.plot').one('click', zoomIn)
+        })
     }
 })()

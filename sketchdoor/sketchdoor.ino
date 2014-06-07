@@ -15,9 +15,6 @@ Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 const int R_STEPS = 513;
 // Simulation steps per revolution (matches abstract door in server)
 const int R_GRANULARITY = 16;
-// Swinging door values are close to degrees, but need calibration depending on the servo
-const int S_CLOSED = 2; // closed position
-const int QUARTER_PI = 52; // 45 degrees from closed position
 // on port #2 (M3 and M4)
 Adafruit_StepperMotor revolver = *AFMS.getStepper(R_STEPS, 2);
 Servo swinger;
@@ -90,8 +87,8 @@ void setup() {
   analogReference(EXTERNAL);
   AFMS.begin();  // create with the default frequency 1.6KHz
   swinger.attach(9);
-  swinger.write(S_CLOSED);
-  sTurn.pos = S_CLOSED;
+  swinger.write(0);
+  sTurn.pos = 0;
   calibrateTemp();
   Serial.begin(9600);
   Serial.println("Doors are ready");

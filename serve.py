@@ -8,8 +8,10 @@ import json
 import argparse
 import os.path
 import re
+import SocketServer
 import sys
 import threading
+import traceback
 
 try:
     import serial
@@ -18,22 +20,70 @@ except ImportError:
 
 import doors
 import dss
+import stats
 
 cli = argparse.ArgumentParser("Run a server that can control and monitor a door model")
 cli.add_argument('-p', '--port', type=int, default=8000, help="Alternative HTTP port")
 cli.add_argument('-d', '--device', help="Arduino serial device name")
 cliargs = cli.parse_args()
 
-revolver = doors.RevolvingDoor(16, 3)
 lock = threading.RLock()
-turns_per_sec = 0.2
+seconds_per_step = 0.625 # 6 rpm for a 16-granularity revolver
 server_start = datetime.now()
-start = datetime.now() # when scenario started
-steps = 0 # steps taken so far in this scenario
-scenario = [0] # how many people arrive at each step
-next_scenario = None
+steps = 1 # advances by one on each loop
+
+model = {
+    'revolver': doors.RevolvingDoor(16, 3),
+    'swinger': doors.SwingingDoor(8, 7)
+}
+scenarios = {
+    'revolver': {
+        'started': 0,
+        'arrivals': [0]
+    },
+    'swinger': {
+        'started': 0,
+        'arrivals': [0]
+    }
+}
+next_scenarios = {
+    'revolver': {
+        'name': None,
+        'arrivals': []
+    },
+    'swinger': {
+        'name': None,
+        'arrivals': []
+    }
+}
+
+last_step = {
+    'step': steps,
+    'revolver': {
+        'arrived': 0, # how many people arrived
+        'steps': 0, # 0 or 1 depending on whether door rotated
+        # door state before the step:
+        'arriving': 0,
+        'occupied': [False, False, False, False],
+        'position': 0
+    },
+    'swinger': {
+        'arrived': 0, # how many people arrived
+        'angle': 0, # door angle at step end (radians)
+        # door state before the step:
+        'arriving': 0,
+        'occupied': [False],
+        'position': 0
+    }
+}
+
+results_log = []
+scenarios_log = []
+
+def log_path(suffix='.csv'):
+    return 'recordings/' + server_start.strftime('%m%d%H-%M%S') + suffix
+
 arduino = None
-recording = 'recordings/' + datetime.now().strftime('%m%d%H-%M%S') + '.csv'
 next_record = datetime.now() # when to record the next temp readings
 alive = True
 
@@ -56,25 +106,10 @@ if cliargs.device:
     arduino = connect_arduino(cliargs.device)
     print 'ready'
 
-last_step = {
-    'step': steps,
-    'arrived': 0, # how many people arrived
-    # door state before the step:
-    'arriving': 0,
-    'occupied': [False, False, False, False],
-    'position': 0,
-    'rotate': False # door rotated
-}
-temperature = None
-
-def delay():
-    next_step = start + timedelta(seconds=(steps / (turns_per_sec * revolver.granularity)))
-    result = (next_step - datetime.now()).total_seconds()
-    if result < 0:
-        print start, steps, next_step, datetime.now()
-        raise Exception('Delay not positive')
-        # 15:27:00.556521 0 15:27:00.869021 15:27:05.847574
-    return result
+def delay(shift=0):
+    # Compute next step time based on number of steps to compensate for drift in timers
+    next_step = server_start + timedelta(seconds=((steps + shift) * seconds_per_step))
+    return (next_step - datetime.now()).total_seconds()
 
 def advance():
     try:
@@ -89,64 +124,79 @@ def advance():
             The remaining fields allow a monitor to synchronize itself with the door by providing
             door state prior to the last step.
         '''
-        global start
         global steps
-        global scenario
-        global next_scenario
-        global last_step
-        global temperature
         global next_record
         global alive
         if not alive:
             return
-        with lock:
-            last_step = {
-                'arriving': revolver.arriving,
-                'occupied': [c for c in revolver.occupied],
-                'position': revolver.position
-            }
-            step = steps % len(scenario)
-            if step == 0 and next_scenario:
-                scenario = next_scenario
-                next_scenario = None
-                start = datetime.now()
-                steps = 0
-            last_step['step'] = steps
-            last_step['arrived'] = scenario[step]
-            revolver.arriving += scenario[step]
-            last_step['rotate'] = revolver.step()
-            steps += 1
         if arduino:
             report = arduino.readline()
-            if temperature and not report:
+            if not report:
                 raise IOError('Arduino did not report temperature')
-            with lock:
-                temperature = temperature or []
-            if report:
-                try:
-                    reportable = [
-                            (datetime.now() - server_start).total_seconds(),
-                            last_step['arriving']
-                        ] + [int(t) for t in report.split()]
-                except:
-                    raise IOError('Arduino error: ' + report)
-                command = '%d %d %d\n' % (
-                    last_step['rotate'] and 1 or 0,
-                    2,
-                    int(delay() * 1000))
-                arduino.write(command)
-                if datetime.now() > next_record:
-                    with lock:
-                        temperature.append(reportable)
-                    next_record += timedelta(seconds=15)
-                if not os.path.exists(os.path.dirname(recording)):
-                    os.makedirs(os.path.dirname(recording))
-                with open(recording, 'a') as record:
-                    record.write(','.join([str(v) for v in reportable]) + '\n')
-        threading.Timer(delay(), advance).start()
+        duration = delay()
+        if duration <= 0:
+            error_message = 'Illegal duration on step %s: %s\n' % (steps, duration)
+            sys.stderr.write(error_message)
+            with open(log_path('-errors.txt'), 'a') as log:
+                log.write(error_message)
+            steps += 1
+            advance() # Skip to next step
+            return
+        with lock:
+            last_step['step'] = steps
+            for door_name in ['revolver', 'swinger']:
+                door = model[door_name]
+                step_info = last_step[door_name]
+
+                step_info['arriving'] = door.arriving
+                step_info['position'] = door.position
+                step_info['occupied'] = [c for c in door.occupied]
+
+                scenario = scenarios[door_name]
+                step = (steps - scenario['started']) % len(scenario['arrivals'])
+                if next_scenarios[door_name]['name'] and step == 0:
+                    log_entry = [(datetime.now() - server_start).total_seconds(), 
+                                 door_name,
+                                 next_scenarios[door_name]['name']]
+                    scenarios_log.append(log_entry)
+                    with open(log_path('-scenarios.csv'), 'a') as log:
+                        log.write(','.join([str(v) for v in log_entry]) + '\n')
+                    scenario['arrivals'] = next_scenarios[door_name]['arrivals']
+                    scenario['started'] = steps
+                    next_scenarios[door_name]['name'] = None
+
+                arrivals = scenario['arrivals'][step]
+                step_info['arrived'] = arrivals
+                door.arriving += arrivals
+                turn_steps = door.step()
+                if door_name == 'revolver':
+                    step_info['rotate'] = turn_steps
+                if door_name == 'swinger':
+                    step_info['angle'] = door.angle()
+            steps += 1
+        reportable = [(datetime.now() - server_start).total_seconds()] \
+                   + [last_step[n]['arrived'] for n in ['revolver', 'swinger']]
+        if arduino:
+            try:
+                reportable += [int(t) for t in report.split()]
+            except:
+                traceback.print_exc()
+                raise IOError('Arduino error: ' + report)
+            with open(log_path(), 'a') as log:
+                log.write(','.join([str(v) for v in reportable]) + '\n')
+            command = '%d %d %d\n' % (
+                last_step['revolver']['rotate'],
+                int(last_step['swinger']['angle'] * 360 / (doors.pi * 2)),
+                int(duration * 1000))
+            arduino.write(command)
+        else:
+            reportable += [30, 33, 90, 96]
+        with lock:
+            results_log.append(reportable)
+        threading.Timer(duration, advance).start()
     except Exception as e:
+        traceback.print_exc()
         alive = False
-        raise e
 
 _LiveSiteHandler = dss.LiveSiteHandler
 class LiveSiteHandler(_LiveSiteHandler):
@@ -173,60 +223,72 @@ class LiveSiteHandler(_LiveSiteHandler):
             self.end_headers()
             return
         try:
+            root, sub = re.search(r'^(?:/([^/]+)/?([^/]*))?', self.path).groups()
             if self.path == '/step':
                 with lock:
                     reply = {k: last_step[k] for k in last_step}
-                    reply['duration'] = int(delay() * 1000)
+                    # duration can be negative if call to this happens very close to a step boundary
+                    duration = max(delay(-1), 0)
+                    reply['duration'] = int(duration * 1000)
                     body = json.dumps(reply)
                 self._send_content(body)
-            elif self.path == '/temperature':
-                if not arduino:
-                    self.send_error(404)
-                    self.end_headers()
+            elif root == 'results':
+                if sub:
+                    csv = ''
+                    with open('results/' + sub) as results_file:
+                        if sub.endswith('-scenarios.csv'):
+                            csv = results_file.read()
+                        else:
+                            log = stats.from_csv(results_file.read())
+                            csv = stats.to_csv(stats.summarize(log))
+                    self._send_content(csv, 'text/csv')
                 else:
-                    if not temperature:
-                        body = ''
-                    else:
-                        with lock:
-                            body = '\n'.join([','.join([str(v) for v in r]) for r in temperature])
-                    self._send_content(body, 'text/csv')
+                    with lock:
+                        csv = stats.to_csv(stats.summarize(results_log))
+                    self._send_content(csv, 'text/csv')
+            elif self.path == '/scenarios':
+                with lock:
+                    csv = stats.to_csv(scenarios_log)
+                self._send_content(csv, 'text/csv')
             else:
                 _LiveSiteHandler.do_GET(self)
         except Exception as e:
-            sys.stderr.write(str(e))
+            traceback.print_exc()
             self.send_error(500)
 
     def do_POST(self):
-        ''' Set up a new run or have someone arrive '''
+        ''' Set up a new run or have someone arrive. Valid commands are:
+
+            -   /start/[door]/[scenario]
+            -   /arrive/[door]/
+
+            Where door is either "revolver" or "swinger."
+        '''
         if not alive:
             self.send_error(500)
             self.end_headers()
             return
         try:
-            match = re.search(r'^/start/([a-z\-]+)', self.path)
-            if match:
-                global turns_per_sec
-                global next_scenario
-                length = int(self.headers['Content-Length'])
-                posted = json.loads(self.rfile.read(length))
-                numeric = re.compile(r'^\s*([0-9])')
-                name = match.group(1)
-                assert re.search(r'^[a-z\-]*$', name) # be safe, do not allow arbitrary path
-                with open(os.path.join('scenarios', name + '.txt')) as f:
-                    matches = [numeric.search(n) for n in f.readlines() if numeric.search(n)]
-                with lock:
-                    next_scenario = [int(m.group(1)) for m in matches]
-                    assert len(scenario) >= 1
-                    turns_per_sec = float(posted['turns_per_sec'])
-                self.send_response(204)
-            elif self.path == '/arrive':
-                with lock:
-                    revolver.arriving += 1
-                self.send_response(204)
+            segments = re.search(r'^/([^/]+)/([^/]+)/?([^/]*)$', self.path)
+            if not segments:
+                self.send_error(400)
             else:
-                self.send_error(403)
+                command, door_name, scenario_name = segments.groups()
+                if command == 'start':
+                    numeric = re.compile(r'^\s*([0-9]+)')
+                    with open(os.path.join('scenarios', scenario_name + '.txt')) as f:
+                        with lock:
+                            next_scenarios[door_name] = doors.scenario(f.read())
+                            next_scenarios[door_name]['name'] = scenario_name
+                    self.send_response(204)
+                elif command == 'arrive':
+                    with lock:
+                        model[door_name].arriving += 1
+                    self.send_response(204)
+                else:
+                    self.send_error(400)
         except Exception as e:
-            sys.stderr.write(str(e))
+            traceback.print_exc()
             self.send_error(500)
         self.end_headers()
 
@@ -234,10 +296,13 @@ class LiveSiteHandler(_LiveSiteHandler):
         pass
 
 dss.LiveSiteHandler = LiveSiteHandler
-server_start = start = datetime.now() # reset since connecting to Arduino takes time
+if not os.path.exists(os.path.dirname(log_path())):
+    os.makedirs(os.path.dirname(log_path()))
+server_start = datetime.now() # reset since connecting to Arduino takes time
 advance()
 try:
     print 'Serving on http://localhost:%s' % (cliargs.port or 8000)
+    SocketServer.TCPServer.allow_reuse_address = True
     dss.DeadSimpleSite('.').serve(port=cliargs.port)
 except KeyboardInterrupt:
     print # for shells that echo ctrl+c without newline
