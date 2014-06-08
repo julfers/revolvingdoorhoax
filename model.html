@@ -27,18 +27,27 @@
     th {
         text-align: left;
     }
+
+    body.published .local {
+        display: none;
+    }
     </style>
 </head>
-<body>
+<body class="published">
+    <script>
+    if (/^localhost/.test(window.location.hostname)) {
+        $('body').removeClass('published')
+    }
+    </script>
     <canvas class="doors" height="400" width="600">
         <div>Revolving door diagram that rotates when people arrive</div>
         <div>Swinging door diagram that swings when people arrive</div>
     </canvas>
-    <div class="chart">
+    <div class="local chart">
         <!-- populated from chart.html -->
     </div>
-    <ol class="faults"></ol>
-    <fieldset class="monitor">
+    <ol class="local faults"></ol>
+    <fieldset class="local monitor">
         <label>
             <input type="radio" name="monitor" value="client" checked>
             <span>Client</span>

@@ -266,7 +266,7 @@ doors.fatal = function (message) {
                 // window.performance or not, so don't set start using Date.now, just in case.
                 // Assume browsers that implement performance.now also use it as the parameter to
                 // requestAnimationFrame.
-                var startTime = performance && performance.now ? performance.now() : null
+                var startTime = window.performance && performance.now ? performance.now() : null
                 var offsetAngle = function (door, steps, time) {
                     // Starts at size of step radians and decreases to zero
                     var offset = door.stepAngle * steps * (1 - (time - startTime) / duration)
