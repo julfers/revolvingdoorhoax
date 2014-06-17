@@ -523,8 +523,13 @@ doors.fatal = function (message) {
 
             // Results
             var xSize = Math.ceil(Math.max(scale.x, 1))
+            var priorX
             $.each(results, function (i, row) {
                 var x = pos.x(row[0])
+                if (x === priorX) {
+                    return
+                }
+                priorX = x
 
                 // Arrivals
                 $.each(row.slice(1, 3), function (j, ppm) {
