@@ -14,16 +14,16 @@ label.position input {
     padding: 0;
     width: 600px; /* Same as canvas width */
 }
-th.temps {
+th.temp {
     display: block;
     position: fixed;
     left: -999px;
 }
-.temps ol {
+.temp ol {
     padding-left: 0;
     list-style-type: none;
 }
-.temps li {
+.temp li {
     background-color: rgba(255, 255, 255, 0.75);
     border-radius: 999px;
     display: inline-block;
@@ -37,14 +37,16 @@ th.temps {
 <table class="points">
     <thead><tr>
         <th>Time</th>
-        <th class="temps">Temps</th>
+        <th class="temp readings">Temperature readings</th>
+        <th class="temp delta">Temperature difference</th>
         <th>Revolving door</th>
         <th>Swinging door</th>
     </tr></thead>
     <tbody>
         <tr>
             <td class="time"></td>
-            <td class="temps"><ol></ol></td>
+            <td class="temp readings"><ol></ol></td>
+            <td class="temp delta value"></td>
             <td class="revolver arrivals"></td>
             <td class="swinger arrivals"></td>
         </tr>

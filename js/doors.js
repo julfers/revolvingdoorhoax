@@ -448,21 +448,6 @@ doors.fatal = function (message) {
     'use strict'
     /* Plotting and data loading functionality for charting */
     doors.plot = function (canvas, resultsUrl, scenariosUrl, interval) {
-        var _ = canvas.getContext('2d')
-
-        var csv = function (text) {
-            var lines = $.grep(text.split(/$/gm), function (line) {
-                return !/^\s*$/.test(line)
-            })
-            return $.map(lines, function (line) {
-                return [$.map(line.split(/,/g), function (x, i) {
-                    if (/\d+(?:\.\d+)/.test(x)) {
-                        return parseFloat(x)
-                    }
-                    return x
-                })] // jQuery.map flattens arrays one level
-            })
-        }
 
         var gutter = {
             x: 0,
@@ -493,14 +478,15 @@ doors.fatal = function (message) {
             if (!results.length) {
                 return
             }
+            var _ = canvas.getContext('2d')
             _.clearRect(0, 0, canvas.width, canvas.height)
 
-            range.x.min = results[0][0]
-            range.x.max = results[results.length - 1][0]
+            range.x.min = results[0].time
+            range.x.max = results[results.length - 1].time
             range.y = {}
-            $.each(results, function (i, row) {
-                var min = Math.min.apply(Math, row.slice(3))
-                var max = Math.max.apply(Math, row.slice(3))
+            $.each(results, function (i, point) {
+                var min = Math.min.apply(Math, point.temps)
+                var max = Math.max.apply(Math, point.temps)
                 range.y.min = range.y.min == null ? min : Math.min(range.y.min, min)
                 range.y.max = range.y.max == null ? max : Math.max(range.y.max, max)
             })
@@ -524,30 +510,42 @@ doors.fatal = function (message) {
             // Results
             var xSize = Math.ceil(Math.max(scale.x, 1))
             var priorX
-            $.each(results, function (i, row) {
-                var x = pos.x(row[0])
+            $.each(results, function (i, point) {
+                var x = pos.x(point.time)
                 if (x === priorX) {
                     return
                 }
                 priorX = x
 
                 // Arrivals
-                $.each(row.slice(1, 3), function (j, ppm) {
-                    var direction = j * 2 - 1 // up for revolver, down for swinger
+                $.each(point.arrivals, function (doorName, ppm) {
+                    var direction = doorName === 'revolver' ? 1 : -1 // up or down, that is
                     var offset = Math.floor(direction * ppm * scale.y / 2)
                     var midY = Math.floor((canvas.height - gutter.x) / 2 + gutter.x)
                     _.fillStyle = 'lightgray'
                     _.fillRect(x - xSize, midY + direction, xSize, offset)
                 })
 
-                // Temperature
-                $.each(row.slice(3), function (j, temp) {
+                var plotTemp = function (temp, color, fill) {
                     var y = pos.y(temp)
-                    _.fillStyle = ['indigo', 'blue', 'indianred', 'maroon'][j]
-                    // Difference between these indicates precision
-                    _.fillRect(x - xSize, Math.floor(y - scale.y / 2), xSize, 1)
-                    _.fillRect(x - xSize, Math.floor(y + scale.y / 2), xSize, 1)
+                    _.fillStyle = color
+                    // Difference between top and bottom indicates precision
+                    var yMin = Math.floor(y - scale.y / 2)
+                    var yMax = Math.floor(y + scale.y / 2)
+                    if (fill) {
+                        _.fillRect(x - xSize, yMin, xSize, scale.y)
+                    } else {
+                        _.fillRect(x - xSize, yMin, xSize, 1)
+                        _.fillRect(x - xSize, yMax, xSize, 1)
+                    }
+                }
+
+                // Temperature
+                $.each(point.temps, function (j, temp) {
+                    plotTemp(temp, ['indigo', 'blue', 'indianred', 'maroon'][j])
                 })
+                // Temperature difference (average indoor - average outdoor)
+                plotTemp(point.delta() + (range.y.max - range.y.min) / 2, 'black', true)
             })
         }
 
@@ -573,15 +571,7 @@ doors.fatal = function (message) {
             point: function (x) {
                 /* Given a coordinate relative to canvas dimensions, return the data point that
                    corresponds */
-                var p = results[index(x)]
-                return {
-                    time: p[0],
-                    arrivals: {
-                        revolver: p[1],
-                        swinger: p[2]
-                    },
-                    temps: p.slice(3)
-                }
+                return results[index(x)]
             },
             range: function (x) {
                 /* Given a coordinate relative to canvas dimensions, return the scenario range that
@@ -590,8 +580,8 @@ doors.fatal = function (message) {
                 */
                 if (x == null) {
                     return {
-                        min: results[0][0],
-                        max: results[results.length - 1][0]
+                        min: results[0].time,
+                        max: results[results.length - 1].time
                     }
                 }
                 var p = results[index(x)]
@@ -602,11 +592,11 @@ doors.fatal = function (message) {
                 }
                 $.each(scenarios, function (i, s) {
                     running[s[1]] = s[2]
-                    if (s[0] < p[0]) {
+                    if (s[0] < p.time) {
                         range.min = s[0]
                         $.extend(range, running)
                     }
-                    if (range.max == null && s[0] > p[0]) {
+                    if (range.max == null && s[0] > p.time) {
                         range.max = s[0]
                     }
                 })
@@ -618,7 +608,7 @@ doors.fatal = function (message) {
                 } else {
                     var s = function (a) {
                         return $.grep(a, function (v) {
-                            return v[0] >= range.min && (range.max == null || v[0] <= range.max)
+                            return v.time >= range.min && (range.max == null || v.time <= range.max)
                         })
                     }
                     slice = function () {
@@ -635,36 +625,66 @@ doors.fatal = function (message) {
             pos: pos
         }
 
-        var onready = []
-        var tick = function () {
-            return $.when(
-                $.get(resultsUrl, null, null, 'text'),
-                $.get(scenariosUrl, null, null, 'text'))
-            .done(function (resultsReply, scenariosReply) {
-                fullResults = csv(resultsReply[0])
-                fullScenarios = csv(scenariosReply[0])
-                slice()
-                render()
-                if (interval) {
-                    setTimeout(tick, interval)
+        return (function () {
+            var point = function (row) {
+                return {
+                    time: row[0],
+                    arrivals: {
+                        revolver: row[1],
+                        swinger: row[2]
+                    },
+                    temps: row.slice(3),
+                    delta: function () {
+                        return (this.temps[2] + this.temps[3] - this.temps[0] - this.temps[1]) / 2
+                    }
                 }
-                while (onready.length) {
-                    onready.shift()(plot)
-                }
-                $.each(onupdate, function (i, fn) {
-                    fn()
-                })
-            })
-            .fail(function () {
-                doors.fatal('No results data')
-            })
-        }
-        tick()
-        return {
-            onready: function (fn) {
-                onready.push(fn)
             }
-        }
+            var csv = function (text) {
+                var lines = $.grep(text.split(/$/gm), function (line) {
+                    return !/^\s*$/.test(line)
+                })
+                return $.map(lines, function (line) {
+                    return [$.map(line.split(/,/g), function (x, i) {
+                        if (/\d+(?:\.\d+)/.test(x)) {
+                            return parseFloat(x)
+                        }
+                        return x
+                    })] // jQuery.map flattens arrays one level
+                })
+            }
+            var onready = []
+            var tick = function () {
+                return $.when(
+                    $.get(resultsUrl, null, null, 'text'),
+                    $.get(scenariosUrl, null, null, 'text'))
+                .done(function (resultsReply, scenariosReply) {
+                    fullResults = $.map(csv(resultsReply[0]), function (row) {
+                        return point(row)
+                    })
+                    fullScenarios = csv(scenariosReply[0])
+                    slice()
+                    render()
+                    if (interval) {
+                        setTimeout(tick, interval)
+                    }
+                    while (onready.length) {
+                        onready.shift()(plot)
+                    }
+                    $.each(onupdate, function (i, fn) {
+                        fn()
+                    })
+                })
+                .fail(function () {
+                    doors.fatal('No results data')
+                })
+            }
+            tick()
+            return {
+                onready: function (fn) {
+                    onready.push(fn)
+                }
+            }
+        })()
     }
 })()
 
@@ -687,16 +707,21 @@ doors.fatal = function (message) {
                 var point = chart.point(position)
                 var row = container.find('table.points tbody tr').last()
                 row.find('.time').text(timeText(point.time))
-                row.find('.temps ol').empty()
+                var readings = row.find('.temp.readings ol').empty()
                 $.each(point.temps, function (i, temp) {
-                    $('<li></li>').text(Math.round(temp / 3))
-                        .prependTo(row.find('.temps ol'))
+                    $('<li class="temp value"></li>').text(Math.round(temp / 3))
+                        .appendTo(readings)
                 })
-                container.find('table.points .temps li').each(function (i) {
-                    var li = $(this)
-                    li.css({
+                row.find('.temp.delta').text(Math.round(point.delta() / 3))
+                container.find('table.points .temp.value').each(function (i) {
+                    var node = $(this)
+                    var top = chart.pos.y(parseFloat(node.text()) * 3) - node.height() * 1.5
+                    top -= node.is('.delta')
+                        ? container.find('canvas').height() / 2
+                        : 0
+                    node.css({
                         position: 'absolute',
-                        top: chart.pos.y(point.temps[i]) - li.height() * 1.5,
+                        top: top,
                         left: chart.pos.x(point.time)
                     })
                 })
@@ -732,10 +757,12 @@ doors.fatal = function (message) {
             var zoomIn = function (event) {
                 var range = chart.range(canvasX(event))
                 chart.slice(range)
+                displayValues(canvasX(event))
                 container.find('canvas.plot').one('click', zoomOut)
             }
-            var zoomOut = function () {
+            var zoomOut = function (event) {
                 chart.slice()
+                displayValues(canvasX(event))
                 container.find('canvas.plot').one('click', zoomIn)
             }
             container.find('canvas.plot').one('click', zoomIn)
