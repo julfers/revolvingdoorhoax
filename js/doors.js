@@ -444,328 +444,324 @@ doors.fatal = function (message) {
     }
 })()
 
-;(function () {
+/* Plotting and data loading functionality for charting */
+doors.plot = function (canvas, results, scenarios, scale) {
     'use strict'
-    /* Plotting and data loading functionality for charting */
-    doors.plot = function (canvas, resultsUrl, scenariosUrl, interval) {
 
-        var gutter = {
-            x: 0,
-            y: Math.floor(canvas.height * 0.05)
+    if (!results.length) {
+        return
+    }
+
+    scale = scale || {}
+    var gutter = {
+        x: 0,
+        y: Math.floor(canvas.height * 0.05)
+    }
+    var scaled = function (v, axis) {
+        return Math.floor((v - range[axis].min) * scale[axis] + gutter[axis])
+    }
+    var pos = {
+        x: function (time) {
+            return scaled(time, 'x')
+        },
+        y: function (temp) {
+            return canvas.height - scaled(temp, 'y')
         }
-        var fullResults, fullScenarios, results, scenarios
-        var scale = {
-            x: null,
-            y: null
+    }
+    var range = {
+        x: {},
+        y: {}
+    }
+    
+    var _ = canvas.getContext('2d')
+    _.clearRect(0, 0, canvas.width, canvas.height)
+
+    range.x.min = results[0].time
+    range.x.max = results[results.length - 1].time
+    range.y = {}
+    $.each(results, function (i, point) {
+        var min = Math.min.apply(Math, point.temps)
+        var max = Math.max.apply(Math, point.temps)
+        range.y.min = range.y.min == null ? min : Math.min(range.y.min, min)
+        range.y.max = range.y.max == null ? max : Math.max(range.y.max, max)
+    })
+
+    if (scale.x == null) {
+        scale.x = Math.min((canvas.width - gutter.x) / ((range.x.max - range.x.min) || 1),
+                           canvas.width * 0.01)
+    }
+    if (scale.y == null) {
+        scale.y = (canvas.height - gutter.y * 2) / ((range.y.max - range.y.min) || 1)
+    }
+
+    // Gridlines every ten minutes, dark line every hour
+    for (var gridLine = range.x.min + 10 * 60; gridLine < range.x.max; gridLine += 10 * 60) {
+        _.fillStyle = (gridLine - range.x.min) % (10 * 60 * 6) === 0 ? 'black' : 'lightgray'
+        _.fillRect(pos.x(gridLine), 0, 1, scale.y)
+    }
+
+    // Scenario changes
+    $.each(scenarios, function (i, row) {
+        _.fillStyle = 'gray'
+        _.fillRect(pos.x(row[0]), 0, 1, canvas.height)
+    })
+
+    // Results
+    var xSize = Math.ceil(Math.max(scale.x, 1))
+    var priorX
+    $.each(results, function (i, point) {
+        var x = pos.x(point.time)
+        if (x === priorX) {
+            return
         }
-        var range = {
-            x: {},
-            y: {}
-        }
-        var scaled = function (v, axis) {
-            return Math.floor((v - range[axis].min) * scale[axis] + gutter[axis])
-        }
-        var pos = {
-            x: function (time) {
-                return scaled(time, 'x')
-            },
-            y: function (temp) {
-                return canvas.height - scaled(temp, 'y')
+        priorX = x
+
+        // Arrivals
+        $.each(point.arrivals, function (doorName, ppm) {
+            var direction = doorName === 'revolver' ? 1 : -1 // up or down, that is
+            var offset = Math.floor(direction * ppm * scale.y / 2)
+            var midY = Math.floor((canvas.height - gutter.x) / 2 + gutter.x)
+            _.fillStyle = 'lightgray'
+            _.fillRect(x - xSize, midY + direction, xSize, offset)
+        })
+
+        var plotTemp = function (temp, color, fill) {
+            var y = pos.y(temp)
+            _.fillStyle = color
+            // Difference between top and bottom indicates precision
+            var yMin = Math.floor(y - scale.y / 2)
+            var yMax = Math.floor(y + scale.y / 2)
+            if (fill) {
+                _.fillRect(x - xSize, yMin, xSize, scale.y)
+            } else {
+                _.fillRect(x - xSize, yMin, xSize, 1)
+                _.fillRect(x - xSize, yMax, xSize, 1)
             }
         }
 
-        var render = function () {
-            if (!results.length) {
-                return
+        // Temperature
+        $.each(point.temps, function (j, temp) {
+            plotTemp(temp, ['indigo', 'blue', 'indianred', 'maroon'][j])
+        })
+        // Temperature difference (average indoor - average outdoor)
+        plotTemp(point.delta() + (range.y.max - range.y.min) / 2, 'black', true)
+    })
+    var index = function (x) {
+        var pos = Math.floor(x / (canvas.width - gutter.x) * results.length)
+        if (pos > results.length - 1) {
+            return results.length - 1
+        }
+        if (pos < 0) {
+            return 0
+        }
+        return pos
+    }
+    return {
+        point: function (x) {
+            /* Given a coordinate relative to canvas dimensions, return the data point that
+               corresponds */
+            return results[index(x)]
+        },
+        range: function (x) {
+            /* Given a coordinate relative to canvas dimensions, return the scenario range that
+               overlaps that coordinate. When given no x-coordinate, return the chart's entire
+               range.
+            */
+            if (x == null) {
+                return {
+                    min: results[0].time,
+                    max: results[results.length - 1].time
+                }
             }
-            var _ = canvas.getContext('2d')
-            _.clearRect(0, 0, canvas.width, canvas.height)
-
-            range.x.min = results[0].time
-            range.x.max = results[results.length - 1].time
-            range.y = {}
-            $.each(results, function (i, point) {
-                var min = Math.min.apply(Math, point.temps)
-                var max = Math.max.apply(Math, point.temps)
-                range.y.min = range.y.min == null ? min : Math.min(range.y.min, min)
-                range.y.max = range.y.max == null ? max : Math.max(range.y.max, max)
+            var p = results[index(x)]
+            var running = {}
+            var range = {
+                min: 0,
+                max: null
+            }
+            $.each(scenarios, function (i, s) {
+                running[s[1]] = s[2]
+                if (s[0] < p.time) {
+                    range.min = s[0]
+                    $.extend(range, running)
+                }
+                if (range.max == null && s[0] > p.time) {
+                    range.max = s[0]
+                }
             })
-
-            scale.x = Math.min((canvas.width - gutter.x) / ((range.x.max - range.x.min) || 1),
-                               canvas.width * 0.01)
-            scale.y = (canvas.height - gutter.y * 2) / ((range.y.max - range.y.min) || 1)
-
-            // Gridlines every ten minutes, dark line every hour
-            for (var gridLine = range.x.min + 10 * 60; gridLine < range.x.max; gridLine += 10 * 60) {
-                _.fillStyle = (gridLine - range.x.min) % (10 * 60 * 6) === 0 ? 'black' : 'lightgray'
-                _.fillRect(pos.x(gridLine), 0, 1, scale.y)
+            return range
+        },
+        slice: function (range) {
+            if (!range) {
+                return {
+                    results: results,
+                    scenarios: scenarios
+                }
+            } else {
+                var s = function (a) {
+                    return $.grep(a, function (v) {
+                        return v.time >= range.min && (range.max == null || v.time <= range.max)
+                    })
+                }
+                return {
+                    results: s(results),
+                    scenarios: s(scenarios)
+                }
             }
+        },
+        scale: scale,
+        pos: pos
+    }
+}
 
-            // Scenario changes
-            $.each(scenarios, function (i, row) {
-                _.fillStyle = 'gray'
-                _.fillRect(pos.x(row[0]), 0, 1, canvas.height)
+doors.results = function (resultsUrl, scenariosUrl, interval) {
+    'use strict'
+
+    var onupdate = []
+
+    return (function () {
+        var point = function (row) {
+            return {
+                time: row[0],
+                arrivals: {
+                    revolver: row[1],
+                    swinger: row[2]
+                },
+                temps: row.slice(3),
+                delta: function () {
+                    return (this.temps[2] + this.temps[3] - this.temps[0] - this.temps[1]) / 2
+                }
+            }
+        }
+        var csv = function (text) {
+            var lines = $.grep(text.split(/$/gm), function (line) {
+                return !/^\s*$/.test(line)
             })
-
-            // Results
-            var xSize = Math.ceil(Math.max(scale.x, 1))
-            var priorX
-            $.each(results, function (i, point) {
-                var x = pos.x(point.time)
-                if (x === priorX) {
-                    return
-                }
-                priorX = x
-
-                // Arrivals
-                $.each(point.arrivals, function (doorName, ppm) {
-                    var direction = doorName === 'revolver' ? 1 : -1 // up or down, that is
-                    var offset = Math.floor(direction * ppm * scale.y / 2)
-                    var midY = Math.floor((canvas.height - gutter.x) / 2 + gutter.x)
-                    _.fillStyle = 'lightgray'
-                    _.fillRect(x - xSize, midY + direction, xSize, offset)
-                })
-
-                var plotTemp = function (temp, color, fill) {
-                    var y = pos.y(temp)
-                    _.fillStyle = color
-                    // Difference between top and bottom indicates precision
-                    var yMin = Math.floor(y - scale.y / 2)
-                    var yMax = Math.floor(y + scale.y / 2)
-                    if (fill) {
-                        _.fillRect(x - xSize, yMin, xSize, scale.y)
-                    } else {
-                        _.fillRect(x - xSize, yMin, xSize, 1)
-                        _.fillRect(x - xSize, yMax, xSize, 1)
+            return $.map(lines, function (line) {
+                return [$.map(line.split(/,/g), function (x, i) {
+                    if (/\d+(?:\.\d+)/.test(x)) {
+                        return parseFloat(x)
                     }
-                }
-
-                // Temperature
-                $.each(point.temps, function (j, temp) {
-                    plotTemp(temp, ['indigo', 'blue', 'indianred', 'maroon'][j])
-                })
-                // Temperature difference (average indoor - average outdoor)
-                plotTemp(point.delta() + (range.y.max - range.y.min) / 2, 'black', true)
+                    return x
+                })] // jQuery.map flattens arrays one level
             })
         }
-
-        var fullSlice = function () {
-            results = fullResults
-            scenarios = fullScenarios
-        }
-        var slice = fullSlice
-
-        var index = function (x) {
-            var pos = Math.floor(x / (canvas.width - gutter.x) * results.length)
-            if (pos > results.length - 1) {
-                return results.length - 1
-            }
-            if (pos < 0) {
-                return 0
-            }
-            return pos
-        }
-
-        var onupdate = []
-        var plot = {
-            point: function (x) {
-                /* Given a coordinate relative to canvas dimensions, return the data point that
-                   corresponds */
-                return results[index(x)]
-            },
-            range: function (x) {
-                /* Given a coordinate relative to canvas dimensions, return the scenario range that
-                   overlaps that coordinate. When given no x-coordinate, return the chart's entire
-                   range.
-                */
-                if (x == null) {
-                    return {
-                        min: results[0].time,
-                        max: results[results.length - 1].time
-                    }
-                }
-                var p = results[index(x)]
-                var running = {}
-                var range = {
-                    min: 0,
-                    max: null
-                }
-                $.each(scenarios, function (i, s) {
-                    running[s[1]] = s[2]
-                    if (s[0] < p.time) {
-                        range.min = s[0]
-                        $.extend(range, running)
-                    }
-                    if (range.max == null && s[0] > p.time) {
-                        range.max = s[0]
-                    }
+        var onready = []
+        var tick = function () {
+            return $.when(
+                $.get(resultsUrl, null, null, 'text'),
+                $.get(scenariosUrl, null, null, 'text'))
+            .done(function (resultsReply, scenariosReply) {
+                var results = $.map(csv(resultsReply[0]), function (row) {
+                    return point(row)
                 })
-                return range
-            },
-            slice: function (range) {
-                if (!range) {
-                    slice = fullSlice
-                } else {
-                    var s = function (a) {
-                        return $.grep(a, function (v) {
-                            return v.time >= range.min && (range.max == null || v.time <= range.max)
-                        })
-                    }
-                    slice = function () {
-                        results = s(results)
-                        scenarios = s(scenarios)
-                    }
+                var scenarios = csv(scenariosReply[0])
+                if (interval) {
+                    setTimeout(tick, interval)
                 }
-                slice()
-                render()
-            },
+                $.each(onupdate, function (i, fn) {
+                    fn(results, scenarios)
+                })
+            })
+            .fail(function () {
+                doors.fatal('No results data')
+            })
+        }
+        tick()
+        return {
             onupdate: function (fn) {
                 onupdate.push(fn)
-            },
-            pos: pos
+            }
         }
+    })()
+}
 
-        return (function () {
-            var point = function (row) {
-                return {
-                    time: row[0],
-                    arrivals: {
-                        revolver: row[1],
-                        swinger: row[2]
-                    },
-                    temps: row.slice(3),
-                    delta: function () {
-                        return (this.temps[2] + this.temps[3] - this.temps[0] - this.temps[1]) / 2
-                    }
-                }
-            }
-            var csv = function (text) {
-                var lines = $.grep(text.split(/$/gm), function (line) {
-                    return !/^\s*$/.test(line)
-                })
-                return $.map(lines, function (line) {
-                    return [$.map(line.split(/,/g), function (x, i) {
-                        if (/\d+(?:\.\d+)/.test(x)) {
-                            return parseFloat(x)
-                        }
-                        return x
-                    })] // jQuery.map flattens arrays one level
-                })
-            }
-            var onready = []
-            var tick = function () {
-                return $.when(
-                    $.get(resultsUrl, null, null, 'text'),
-                    $.get(scenariosUrl, null, null, 'text'))
-                .done(function (resultsReply, scenariosReply) {
-                    fullResults = $.map(csv(resultsReply[0]), function (row) {
-                        return point(row)
-                    })
-                    fullScenarios = csv(scenariosReply[0])
-                    slice()
-                    render()
-                    if (interval) {
-                        setTimeout(tick, interval)
-                    }
-                    while (onready.length) {
-                        onready.shift()(plot)
-                    }
-                    $.each(onupdate, function (i, fn) {
-                        fn()
-                    })
-                })
-                .fail(function () {
-                    doors.fatal('No results data')
-                })
-            }
-            tick()
-            return {
-                onready: function (fn) {
-                    onready.push(fn)
-                }
-            }
-        })()
-    }
-})()
-
-;(function () {
+/* An interactive chart using the markup structure from chart.html */
+doors.chart = function (container) {
     'use strict'
-    /* An interactive chart using the markup structure from chart.html */
-    doors.chart = function (container, resultsUrl, scenariosUrl, interval) {
-        container = $(container)
 
-        doors.plot($(container).find('canvas')[0], resultsUrl, scenariosUrl, interval)
-        .onready(function (chart) {
-            var timeText = function (seconds) {
-                seconds = Math.round(seconds)
-                var hours = Math.floor(seconds / 60 / 60)
-                seconds -= hours * 60 * 60
-                var minutes = Math.floor(seconds / 60)
-                return hours + ':' + ('00' + minutes).slice(-2)
-            }
-            var displayValues = function (position) {
-                var point = chart.point(position)
-                var row = container.find('table.points tbody tr').last()
-                row.find('.time').text(timeText(point.time))
-                var readings = row.find('.temp.readings ol').empty()
-                $.each(point.temps, function (i, temp) {
-                    $('<li class="temp value"></li>').text(Math.round(temp / 3))
-                        .appendTo(readings)
-                })
-                row.find('.temp.delta').text(Math.round(point.delta() / 3))
-                container.find('table.points .temp.value').each(function (i) {
-                    var node = $(this)
-                    var top = chart.pos.y(parseFloat(node.text()) * 3) - node.height() * 1.5
-                    top -= node.is('.delta')
-                        ? container.find('canvas').height() / 2
-                        : 0
-                    node.css({
-                        position: 'absolute',
-                        top: top,
-                        left: chart.pos.x(point.time)
-                    })
-                })
-                $.each(point.arrivals, function (k, v) {
-                    row.find('.arrivals.' + k).text(v)
-                })
-            }
+    container = $(container)
+    var canvas = container.find('canvas')[0]
 
-            chart.onupdate(function () {
-                displayValues(container.find('.position input').val())
+    var timeText = function (seconds) {
+        seconds = Math.round(seconds)
+        var hours = Math.floor(seconds / 60 / 60)
+        seconds -= hours * 60 * 60
+        var minutes = Math.floor(seconds / 60)
+        return hours + ':' + ('00' + minutes).slice(-2)
+    }
+
+    var plot // set when updated
+    var displayValues = function (position) {
+        if (!plot) {
+            return
+        }
+        var point = plot.point(position)
+        var row = container.find('table.points tbody tr').last()
+        row.find('.time').text(timeText(point.time))
+        var readings = row.find('.temp.readings ol').empty()
+        $.each(point.temps, function (i, temp) {
+            $('<li class="temp value"></li>').text(Math.round(temp / 3))
+                .appendTo(readings)
+        })
+        row.find('.temp.delta').text(Math.round(point.delta() / 3))
+        container.find('table.points .temp.value').each(function (i) {
+            var node = $(this)
+            var top = plot.pos.y(parseFloat(node.text()) * 3) - node.height() * 1.5
+            top -= node.is('.delta')
+                ? container.find('canvas').height() / 2
+                : 0
+            node.css({
+                position: 'absolute',
+                top: top,
+                left: plot.pos.x(point.time)
             })
-
-            var canvasX = function (event) { // X position relative to canvas
-                return event.originalEvent.pageX - container.find('canvas.plot').offset().left
-            }
-
-            container.find('.position input')
-                .attr({
-                    min: 0,
-                    max: container.find('canvas.plot').attr('width')
-                })
-                .val(container.find('canvas.plot').attr('width'))
-                .on('change', function () {
-                    displayValues($(this).val())
-                })
-                .removeAttr('disabled')
-            container.find('canvas.plot').on('mousemove', function (event) {
-                container.find('.position input')
-                    .val(canvasX(event))
-                    .trigger('change')
-            })
-
-            var zoomIn = function (event) {
-                var range = chart.range(canvasX(event))
-                chart.slice(range)
-                displayValues(canvasX(event))
-                container.find('canvas.plot').one('click', zoomOut)
-            }
-            var zoomOut = function (event) {
-                chart.slice()
-                displayValues(canvasX(event))
-                container.find('canvas.plot').one('click', zoomIn)
-            }
-            container.find('canvas.plot').one('click', zoomIn)
+        })
+        $.each(point.arrivals, function (k, v) {
+            row.find('.arrivals.' + k).text(v)
         })
     }
-})()
+    var canvasX = function (event) { // X position relative to canvas
+        return event.originalEvent.pageX - container.find('canvas.plot').offset().left
+    }
+
+    container.find('.position input')
+        .attr({
+            min: 0,
+            max: container.find('canvas.plot').attr('width')
+        })
+        .val(container.find('canvas.plot').attr('width'))
+        .on('change', function () {
+            displayValues($(this).val())
+        })
+        .removeAttr('disabled')
+    container.find('canvas.plot').on('mousemove', function (event) {
+        container.find('.position input')
+            .val(canvasX(event))
+            .trigger('change')
+    })
+
+    var zoomNext = 0
+
+    var zoomIn = function (event) {
+        if (!plot) {
+            return
+        }
+        var range = plot.range(canvasX(event))
+        var sliced = plot.slice(range)
+        doors.plot(
+            container.find('.zoomed canvas')[zoomNext],
+            sliced.results, sliced.scenarios,
+            {y: plot.scale.y})
+        zoomNext = (zoomNext + 1) % container.find('.zoomed canvas').length
+        displayValues(canvasX(event))
+    }
+    container.find('canvas').on('click', zoomIn)
+
+    return {
+        update: function (results, scenarios) {
+            plot = doors.plot(canvas, results, scenarios)
+            displayValues(container.find('.position input').val())
+        }
+    }
+}

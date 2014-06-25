@@ -19,6 +19,9 @@ th.temp {
     position: fixed;
     left: -999px;
 }
+td.temp {
+    display: block;
+}
 .temp ol {
     padding-left: 0;
     list-style-type: none;
@@ -27,6 +30,9 @@ th.temp {
     background-color: rgba(255, 255, 255, 0.75);
     border-radius: 999px;
     display: inline-block;
+}
+.zoomed {
+    float: left;
 }
 </style>
 <canvas class="plot" height="400" width="600"></canvas>
@@ -52,3 +58,9 @@ th.temp {
         </tr>
     </tbody>
 </table>
+<div class="zoomed">
+    <canvas class="plot" height="400" width="600"></canvas>
+</div>
+<div class="zoomed">
+    <canvas class="plot" height="400" width="600"></canvas>
+</div>

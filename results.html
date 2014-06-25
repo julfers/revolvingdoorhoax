@@ -14,7 +14,9 @@
     ;(function () {
         'use strict'
         $('.chart').load('chart.html', function () {
-            doors.chart($('.chart'), '/results/051100-0855.csv', '/results/051100-0855-scenarios.csv')
+            var chart = doors.chart($('.chart'))
+            doors.results('/results/051100-0855.csv', '/results/051100-0855-scenarios.csv')
+            .onupdate(chart.update)
         })
     })()
     </script>
