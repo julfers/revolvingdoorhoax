@@ -3,6 +3,15 @@
 .chart {
     position: relative;
 }
+.loading-message {
+    display: none;
+}
+[aria-busy=true] * {
+    display: none;
+}
+[aria-busy=true] .loading-message {
+    display: block;
+}
 label.position {
     display: block;
 }
@@ -21,6 +30,14 @@ th.temp {
 }
 td.temp {
     display: block;
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+.temp h4 {
+    font-weight: normal;
+    font-size: small;
+    padding-left: 20px;
 }
 .temp ol {
     padding-left: 0;
@@ -35,32 +52,46 @@ td.temp {
     float: left;
 }
 </style>
-<canvas class="plot" height="400" width="600"></canvas>
-<label class="position">
-    <span>Values at position</span>
-    <input type="range" disabled>
-</label>
-<table class="points">
-    <thead><tr>
-        <th>Time</th>
-        <th class="temp readings">Temperature readings</th>
-        <th class="temp delta">Temperature difference</th>
-        <th>Revolving door</th>
-        <th>Swinging door</th>
-    </tr></thead>
-    <tbody>
-        <tr>
-            <td class="time"></td>
-            <td class="temp readings"><ol></ol></td>
-            <td class="temp delta value"></td>
-            <td class="revolver arrivals"></td>
-            <td class="swinger arrivals"></td>
-        </tr>
-    </tbody>
-</table>
-<div class="zoomed">
-    <canvas class="plot" height="400" width="600"></canvas>
-</div>
-<div class="zoomed">
-    <canvas class="plot" height="400" width="600"></canvas>
+<div aria-busy="true">
+    <canvas height="400" width="600"></canvas>
+    <label class="position">
+        <span>Values at position</span>
+        <input type="range" disabled>
+    </label>
+    <table class="points">
+        <thead><tr>
+            <th>Time</th>
+            <th class="temp">Temperature</th>
+            <th>Revolving door</th>
+            <th>Swinging door</th>
+        </tr></thead>
+        <tbody>
+            <tr>
+                <td class="time"></td>
+                <td class="temp">
+                    <h4>Outdoor</h4>
+                    <ol>
+                        <li class="temp value"></li>
+                        <li class="temp value"></li>
+                    </ol>
+                    <h4>Indoor</h4>
+                    <ol>
+                        <li class="temp value"></li>
+                        <li class="temp value"></li>
+                    </ol>
+                    <h4 class="delta">Difference</h4>
+                    <div class="temp delta value"></div>
+                </td>
+                <td class="revolver arrivals"></td>
+                <td class="swinger arrivals"></td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="zoomed">
+        <canvas height="400" width="600"></canvas>
+    </div>
+    <div class="zoomed">
+        <canvas height="400" width="600"></canvas>
+    </div>
+    <div class="loading-message">Loading...</div>
 </div>

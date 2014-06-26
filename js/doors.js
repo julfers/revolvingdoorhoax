@@ -681,7 +681,7 @@ doors.chart = function (container) {
     'use strict'
 
     container = $(container)
-    var canvas = container.find('canvas')[0]
+    var canvas = container.find('canvas').first()
 
     var timeText = function (seconds) {
         seconds = Math.round(seconds)
@@ -689,6 +689,18 @@ doors.chart = function (container) {
         seconds -= hours * 60 * 60
         var minutes = Math.floor(seconds / 60)
         return hours + ':' + ('00' + minutes).slice(-2)
+    }
+
+    var placeOnChart = function (node, temp, time) {
+        var top = plot.pos.y(temp) - node.height() * 1.5
+        top -= node.is('.delta')
+            ? canvas.height() / 2
+            : 0
+        return node.css({
+            position: 'absolute',
+            top: top,
+            left: plot.pos.x(time)
+        })
     }
 
     var plot // set when updated
@@ -699,43 +711,35 @@ doors.chart = function (container) {
         var point = plot.point(position)
         var row = container.find('table.points tbody tr').last()
         row.find('.time').text(timeText(point.time))
-        var readings = row.find('.temp.readings ol').empty()
+
         $.each(point.temps, function (i, temp) {
-            $('<li class="temp value"></li>').text(Math.round(temp / 3))
-                .appendTo(readings)
+            var reading = row.find('.temp li').eq(i)
+                .text(Math.round(temp / 3))
+            placeOnChart(reading, temp, point.time)
         })
-        row.find('.temp.delta').text(Math.round(point.delta() / 3))
-        container.find('table.points .temp.value').each(function (i) {
-            var node = $(this)
-            var top = plot.pos.y(parseFloat(node.text()) * 3) - node.height() * 1.5
-            top -= node.is('.delta')
-                ? container.find('canvas').height() / 2
-                : 0
-            node.css({
-                position: 'absolute',
-                top: top,
-                left: plot.pos.x(point.time)
-            })
-        })
+        
+        var delta = row.find('.temp.delta').text(Math.round(point.delta() / 3))
+        placeOnChart(delta, point.delta(), point.time)
+
         $.each(point.arrivals, function (k, v) {
             row.find('.arrivals.' + k).text(v)
         })
     }
     var canvasX = function (event) { // X position relative to canvas
-        return event.originalEvent.pageX - container.find('canvas.plot').offset().left
+        return event.originalEvent.pageX - canvas.offset().left
     }
 
     container.find('.position input')
         .attr({
             min: 0,
-            max: container.find('canvas.plot').attr('width')
+            max: canvas.attr('width')
         })
-        .val(container.find('canvas.plot').attr('width'))
+        .val(canvas.attr('width'))
         .on('change', function () {
             displayValues($(this).val())
         })
         .removeAttr('disabled')
-    container.find('canvas.plot').on('mousemove', function (event) {
+    canvas.on('mousemove', function (event) {
         container.find('.position input')
             .val(canvasX(event))
             .trigger('change')
@@ -760,7 +764,18 @@ doors.chart = function (container) {
 
     return {
         update: function (results, scenarios) {
-            plot = doors.plot(canvas, results, scenarios)
+            container.find('[aria-busy]').removeAttr('aria-busy')
+            plot = doors.plot(canvas[0], results, scenarios)
+            var lastPoint = plot.point(canvas.width())
+            for (var cut = 0; cut < 2; cut++) {
+                placeOnChart(container.find('.temp h4').eq(cut),
+                        ( lastPoint.temps.slice(cut * 2)[0]
+                        + lastPoint.temps.slice(cut * 2)[1]
+                        ) / 2,
+                    lastPoint.time)
+            }
+            placeOnChart(container.find('.temp h4.delta'), lastPoint.delta(), lastPoint.time)
+
             displayValues(container.find('.position input').val())
         }
     }
