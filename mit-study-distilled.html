@@ -126,7 +126,7 @@ not indicate which part of the figures to read for wind surface pressure coeffic
 <dt>C1: Total pressure (inches of water)</dt>
 <dd><tt class="docutils literal">`Deltap = p_(w) - Deltap_(s)`</tt></dd>
 <dt>C2: Stack pressure (inches of water)</dt>
-<dd><p class="first"><tt class="docutils literal">`C_1 rho_0 ((T_0 - T_(i)) / T_(i)) g (H_(NPL) - H)`</tt></p>
+<dd><p class="first"><tt class="docutils literal">`C_1 rho_0 ((T_o - T_i) / T_i) g (H_&quot;NPL&quot; - H)`</tt></p>
 <dl class="last docutils">
 <dt><tt class="docutils literal">`C_1 = 0.00598`</tt></dt>
 <dd>Unit conversion factor, <tt class="docutils literal"><span class="pre">`(\&quot;inches</span> of water&quot;) * &quot;ft&quot; * <span class="pre">&quot;s&quot;^2</span> / &quot;lb&quot;`</tt></dd>
@@ -139,7 +139,7 @@ a value, but not here. Assume they should be the same.</em></dd>
 <dd>Indoor temperature, degrees Rankine.</dd>
 <dt><tt class="docutils literal">`g = 32.2`</tt></dt>
 <dd>Gravitational acceleration, <tt class="docutils literal"><span class="pre">`&quot;ft&quot;/&quot;s&quot;^2`</span></tt></dd>
-<dt><tt class="docutils literal">`H_(NPL) = 35`</tt></dt>
+<dt><tt class="docutils literal">`H_&quot;NPL&quot; = 35`</tt></dt>
 <dd>Height of neutral pressure level, <tt class="docutils literal">`&quot;ft&quot;`</tt>, may use half the height of the building</dd>
 <dt><tt class="docutils literal">`H = 3.5`</tt></dt>
 <dd>Height of the point of interest, <tt class="docutils literal">`&quot;ft&quot;`</tt>, may use half the height of the door</dd>
@@ -152,7 +152,8 @@ a value, but not here. Assume they should be the same.</em></dd>
 <dd>Unit conversion factor, <tt class="docutils literal"><span class="pre">`(&quot;inches</span> of water&quot;) * <span class="pre">&quot;ft&quot;^3</span> / (&quot;lb&quot; * <span class="pre">&quot;mph&quot;^2)`</span></tt></dd>
 <dt><tt class="docutils literal">`C_p`</tt></dt>
 <dd>Wind surface pressure coefficient (see Figures B9 and B10), <em>but no indication of which
-value to use.</em></dd>
+value to use. If using figure B9, notice that the caption indicates the values should be
+divided by 100.</em></dd>
 <dt><tt class="docutils literal">`rho = 0.075`</tt></dt>
 <dd>Outdoor air density, <tt class="docutils literal"><span class="pre">`&quot;lb&quot;/&quot;ft&quot;^3`</span></tt></dd>
 <dt><tt class="docutils literal">`U`</tt></dt>
@@ -161,6 +162,78 @@ indicated for wind pressure being proportional to the square of wind speed.</em>
 </dl>
 </dd>
 </dl>
+<div class="figure">
+<a class="reference external image-reference" href="img/wind-pressure-coefficient-tall.png"><img alt="Wind pressure coefficients for tall buildings" src="img/wind-pressure-coefficient-tall.png" style="height: 400px;" /></a>
+<p class="caption">Figure B9: Local pressure coefficients (<tt class="docutils literal">`C_p * 100`</tt>) for tall buildings with varying wind
+direction.</p>
+</div>
+<div class="figure">
+<a class="reference external image-reference" href="img/wind-pressure-coefficient-short.png"><img alt="Wind pressure coefficients for low-rise buildings" src="img/wind-pressure-coefficient-short.png" style="height: 400px;" /></a>
+<p class="caption">Figure B10: Local pressure coefficients for low-rise buildings with varying wind direction.</p>
+</div>
+<table border="1" class="docutils">
+<colgroup>
+<col width="10%" />
+<col width="49%" />
+<col width="41%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Month</th>
+<th class="head">Avg. High Temperature (F)</th>
+<th class="head">Avg. Wind Speed (mph)</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>Jan</td>
+<td>43</td>
+<td>12</td>
+</tr>
+<tr><td>Feb</td>
+<td>38</td>
+<td>13</td>
+</tr>
+<tr><td>Mar</td>
+<td>47</td>
+<td>12</td>
+</tr>
+<tr><td>Apr</td>
+<td>58</td>
+<td>11</td>
+</tr>
+<tr><td>May</td>
+<td>58</td>
+<td>11</td>
+</tr>
+<tr><td>Jun</td>
+<td>77</td>
+<td>10</td>
+</tr>
+<tr><td>Jul</td>
+<td>81</td>
+<td>10</td>
+</tr>
+<tr><td>Aug</td>
+<td>82</td>
+<td>9</td>
+</tr>
+<tr><td>Sep</td>
+<td>76</td>
+<td>10</td>
+</tr>
+<tr><td>Oct</td>
+<td>61</td>
+<td>13</td>
+</tr>
+<tr><td>Nov</td>
+<td>54</td>
+<td>11</td>
+</tr>
+<tr><td>Dec</td>
+<td>38</td>
+<td>12</td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 <div class="section" id="energy-consumption">

@@ -30,6 +30,88 @@ however, claim increasing revolving doors use would significantly reduce heating
 <p>Ok, seekers of truth, let us replicate the calculations. Those who follow will find the paper's
 energy calculations dubious.</p>
 <p>You can read the study to infer its methods, or refer to the <a class="reference external" href="mit-study-distilled.html">condensed version</a>.</p>
+<p>According to the paper, swinging door air infiltration can be read off two charts, one for leakage
+through seals and the other for leakage due to opening for traffic. Reading the infiltration rate
+on both charts depends on air pressure, so first attempt to calculation the pressure difference
+between indoor and outdoor. The given formula, <tt class="docutils literal">`Deltap = p_(w) - Deltap_(s)`</tt>, subtracts stack
+pressure from window pressure.</p>
+<p>The formula <tt class="docutils literal">`C_1 rho_0 ((T_o - T_i) / T_i) g (H_&quot;NPL&quot; - H)`</tt> yields stack pressure from
+given numbers and the estimated 70 foot height of the building, plugging in numbers turns stack
+pressure into this function of outdoor temperature:</p>
+<p><tt class="docutils literal">`0.00598 * 0.075 ((T_o - 532) / 532) 32.2 * (35 - 3.5)`</tt> or <tt class="docutils literal">`0.000855 DeltaT`</tt></p>
+<p>In the coldest and warmest months:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="53%" />
+<col width="48%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">February (38 degrees)</th>
+<th class="head">August (82 degrees)</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>-0.029</td>
+<td>0.009</td>
+</tr>
+</tbody>
+</table>
+<p>At this point, the calculation should incorporate pressure due to wind, interpolating values given,
+a function of &quot;wind pressure coefficient&quot; and wind speed:</p>
+<p><tt class="docutils literal">`p_w = 0.0129 * 0.075 C_p U^2 / 2`</tt></p>
+<p>The study gives figures from which to read the wind pressure coefficient, but no indication of which
+value it actually used. Interpreting the pressure coefficient diagrams and schematics of the a
+building front, a reasonable range of coefficients would be -0.7 to 0.7. At most, however, the
+coefficient, ranges from -1.2 to 0.9, so we can calculate wind pressure range and the highest and
+lowest wind speed months, coincidentally the same as those for temperature:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="42%" />
+<col width="37%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Coefficient</th>
+<th class="head">February (13 mph wind)</th>
+<th class="head">August (9 mph wind)</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>-1.2</td>
+<td>-0.098</td>
+<td>-0.047</td>
+</tr>
+<tr><td>0.9</td>
+<td>0.074</td>
+<td>0.035</td>
+</tr>
+</tbody>
+</table>
+<p>Thus, depending on the wind pressure coefficient chosen, total pressure difference may be in one of
+these ranges:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="38%" />
+<col width="29%" />
+<col width="33%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">February</th>
+<th class="head">August</th>
+<th class="head">October</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>-0.069</td>
+<td>-0.056</td>
+<td>-0.089</td>
+</tr>
+<tr><td>0.103</td>
+<td>0.026</td>
+<td>0.083</td>
+</tr>
+</tbody>
+</table>
 <p><em>Work in progress, pending verification, it appears that the MIT study overestimates air
 infiltration through swinging doors.</em></p>
 </div>
