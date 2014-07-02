@@ -1,5 +1,7 @@
 ;(function () {
-    'use strict';
+'use strict'
+
+window.doors = (function () {
     /*
     Use Skulpt to convert the doors Python module API for use in the browser. Beware that this this
     works well enough for doors, but is not at all robust.
@@ -50,10 +52,10 @@
         return pyVal.v
     }
 
+    var jsModule = {}
     $.ajax('doors.py', {dataType: 'text', async: false})
     .done(function (source) {
         var pyModule = Sk.importMainWithBody('doors', false, source)
-        var jsModule = {}
         var pyFunctionToJs = function (pyObj, name) {
             return function () {
                 var fn = pyObj.tp$getattr(name)
@@ -105,8 +107,8 @@
             ['step', 'angle'])
         jsModule.scenario = pyFunctionToJs(pyModule, 'scenario')
         jsModule.split = pyFunctionToJs(pyModule, 'split')
-        window.doors = jsModule
     })
+    return jsModule
 })()
 
 doors.fault = function (message) {
@@ -118,11 +120,10 @@ doors.fatal = function (message) {
     throw message
 }
 
-;(function () {
-    'use strict'
+doors.renderer = (function () {
     /* Set up a renderer that draws a door on a canvas */
     var rotation = Math.PI / 2
-    doors.renderer = function (revolver, swinger, canvas) {
+    return function (revolver, swinger, canvas) {
         var _ = canvas.getContext('2d')
         var drawRadial = function (angle, start, stop, color) {
             // Angle in radians and start and stop are distance from center in fractions of radius
@@ -289,165 +290,155 @@ doors.fatal = function (message) {
     }
 })()
 
-;(function () {
-    'use strict'
+doors.player = function (revolver, swinger, canvas) {
     /* Set up a player that draws doors on a canvas, allowing playing, pausing and stepping */
-
-    doors.player = function (revolver, swinger, canvas) {
-        var renderer = doors.renderer(revolver, swinger, canvas)
-        var player = (function () {
-            var paused = true
-            var play = function (millisPerStep) {
-                if (!(millisPerStep > 0)) {
-                    throw 'Need positive step time, not ' + millisPerStep
-                }
-                ;(function run () {
-                    if (paused) {
-                        return
-                    }
-                    var rSteps = revolver.step()
-                    var sSteps = swinger.step()
-                    renderer.step(millisPerStep, rSteps, sSteps, function () {
-                        player.onstep.revolver()
-                        player.onstep.swinger()
-                        requestAnimationFrame(run)
-                    })
-                })()
+    var renderer = doors.renderer(revolver, swinger, canvas)
+    var player = (function () {
+        var paused = true
+        var play = function (millisPerStep) {
+            if (!(millisPerStep > 0)) {
+                throw 'Need positive step time, not ' + millisPerStep
             }
-            return {
-                pause: function () {
-                    paused = true
-                },
-                play: function (millisPerStep) {
-                    if (paused) {
-                        paused = false
-                        play(millisPerStep)
-                    }
-                },
-                step: function (duration, done) {
-                    renderer.step(duration, revolver.step(), swinger.step(), done)
-                },
-                onstep: {
-                    revolver: $.noop,
-                    swinger: $.noop
-                },
-                draw: renderer.draw
-            }
-        })()
-        return player
-    }
-})()
-
-;(function () {
-    'use strict'
-    /* Create a monitor that renders a door from server-side info */
-
-    doors.monitor = function (revolver, swinger, canvas) {
-        var renderer = doors.renderer(revolver, swinger, canvas)
-        var step = 0
-        var stopped = true
-        var reset = true
-        var model = {
-            revolver: revolver,
-            swinger: swinger
-        }
-        var priorCommands
-        var nextStep = function () {
-            $.getJSON('/step')
-            .done(function (commands) {
-                var sync = function () {
-                    step = commands.step
-                    $.each(model, function (doorName, door) {
-                        $.each(['arriving', 'occupied', 'position'], function (i, k) {
-                            door[k] = commands[doorName][k]
-                        })
-                    })
-                }
-                if (stopped) {
+            ;(function run () {
+                if (paused) {
                     return
                 }
-                if (reset) {
-                    // Could reset every time, but to simulate the physical door, only reset when
-                    // switching from local playback to monitoring the door server. Since the
-                    // physical door has no "reset" capability, tracking it helps test that the
-                    // server does not get out of sync.
-                    sync()
-                    reset = false
-                }
-                if (commands.duration === 0) {
-                    // Sometimes a request falls right on the boundary, so the next step time passed
-                    // but the timer hasn't advanced the model yet
-                    nextStep()
-                    return
-                }
-                if (commands.step !== step) {
-                    console.error(priorCommands, commands)
-                    doors.fault('Missed step ' + step)
-                    sync()
-                }
-                priorCommands = commands
-                ++step
-                var renderArgs = [commands.duration]
-                $.each(model, function (doorName, door) {
-                    door.arriving += commands[doorName].arrived
-                    var steps = door.step()
-                    renderArgs.push(steps)
-                    if (doorName === 'revolver' && commands.revolver.rotate !== steps) {
-                        doors.fatal('Revolver out of sync')
-                    }
-                    if (doorName === 'swinger' && commands.swinger.angle !== swinger.angle()) {
-                        doors.fatal('Swinger out of sync')
-                    }
+                var rSteps = revolver.step()
+                var sSteps = swinger.step()
+                renderer.step(millisPerStep, rSteps, sSteps, function () {
+                    player.onstep.revolver()
+                    player.onstep.swinger()
+                    requestAnimationFrame(run)
                 })
-                renderArgs.push(nextStep)
-                renderer.step.apply(renderer, renderArgs)
-            })
-            .fail(function (xhr) {
-                doors.fatal('Step request failed: ' + xhr.status)
-            })
-        }
-        var controls = function (doorName) {
-            return {
-                arrive: function () {
-                    $.post('/arrive/' + doorName)
-                    .done(function () {
-                        ++model[doorName].arriving
-                        renderer.draw()
-                    })
-                    .fail(function (xhr) {
-                        doors.fault('Arrival command failed: ' + xhr.status)
-                    })
-                },
-                load: function (scenario) {
-                    return $.post('/start/' + doorName + '/' + scenario)
-                    .done(function (status) {
-                        if (stopped) {
-                            stopped = false
-                            reset = true
-                            nextStep()
-                        }
-                    })
-                    .fail(function (xhr) {
-                        doors.fault('Start request failed: ' + xhr.status)
-                    })
-                }
-            }
+            })()
         }
         return {
-            revolver: controls('revolver'),
-            swinger: controls('swinger'),
-            stop: function () {
-                stopped = true
+            pause: function () {
+                paused = true
+            },
+            play: function (millisPerStep) {
+                if (paused) {
+                    paused = false
+                    play(millisPerStep)
+                }
+            },
+            step: function (duration, done) {
+                renderer.step(duration, revolver.step(), swinger.step(), done)
+            },
+            onstep: {
+                revolver: $.noop,
+                swinger: $.noop
             },
             draw: renderer.draw
         }
+    })()
+    return player
+}
+
+doors.monitor = function (revolver, swinger, canvas) {
+    /* Create a monitor that renders a door from server-side info */
+    var renderer = doors.renderer(revolver, swinger, canvas)
+    var step = 0
+    var stopped = true
+    var reset = true
+    var model = {
+        revolver: revolver,
+        swinger: swinger
     }
-})()
+    var priorCommands
+    var nextStep = function () {
+        $.getJSON('/step')
+        .done(function (commands) {
+            var sync = function () {
+                step = commands.step
+                $.each(model, function (doorName, door) {
+                    $.each(['arriving', 'occupied', 'position'], function (i, k) {
+                        door[k] = commands[doorName][k]
+                    })
+                })
+            }
+            if (stopped) {
+                return
+            }
+            if (reset) {
+                // Could reset every time, but to simulate the physical door, only reset when
+                // switching from local playback to monitoring the door server. Since the
+                // physical door has no "reset" capability, tracking it helps test that the
+                // server does not get out of sync.
+                sync()
+                reset = false
+            }
+            if (commands.duration === 0) {
+                // Sometimes a request falls right on the boundary, so the next step time passed
+                // but the timer hasn't advanced the model yet
+                nextStep()
+                return
+            }
+            if (commands.step !== step) {
+                console.error(priorCommands, commands)
+                doors.fault('Missed step ' + step)
+                sync()
+            }
+            priorCommands = commands
+            ++step
+            var renderArgs = [commands.duration]
+            $.each(model, function (doorName, door) {
+                door.arriving += commands[doorName].arrived
+                var steps = door.step()
+                renderArgs.push(steps)
+                if (doorName === 'revolver' && commands.revolver.rotate !== steps) {
+                    doors.fatal('Revolver out of sync')
+                }
+                if (doorName === 'swinger' && commands.swinger.angle !== swinger.angle()) {
+                    doors.fatal('Swinger out of sync')
+                }
+            })
+            renderArgs.push(nextStep)
+            renderer.step.apply(renderer, renderArgs)
+        })
+        .fail(function (xhr) {
+            doors.fatal('Step request failed: ' + xhr.status)
+        })
+    }
+    var controls = function (doorName) {
+        return {
+            arrive: function () {
+                $.post('/arrive/' + doorName)
+                .done(function () {
+                    ++model[doorName].arriving
+                    renderer.draw()
+                })
+                .fail(function (xhr) {
+                    doors.fault('Arrival command failed: ' + xhr.status)
+                })
+            },
+            load: function (scenario) {
+                return $.post('/start/' + doorName + '/' + scenario)
+                .done(function (status) {
+                    if (stopped) {
+                        stopped = false
+                        reset = true
+                        nextStep()
+                    }
+                })
+                .fail(function (xhr) {
+                    doors.fault('Start request failed: ' + xhr.status)
+                })
+            }
+        }
+    }
+    return {
+        revolver: controls('revolver'),
+        swinger: controls('swinger'),
+        stop: function () {
+            stopped = true
+        },
+        draw: renderer.draw
+    }
+}
 
-/* Plotting and data loading functionality for charting */
 doors.plot = function (canvas, results, scenarios, scale) {
-    'use strict'
-
+    /* Experiment result charting */
     if (!results.length) {
         return
     }
@@ -509,6 +500,31 @@ doors.plot = function (canvas, results, scenarios, scale) {
     // Results
     var xSize = Math.ceil(Math.max(scale.x, 1))
     var priorX
+    var tracker = function () {
+        return {
+            sum: 0,
+            count: 0,
+            start: 0,
+            average: function () {
+                return this.sum / this.count
+            },
+            reset: function (time) {
+                this.sum = 0
+                this.count = 0
+                this.start = time
+            },
+            add: function (v) {
+                this.sum += v
+                ++this.count
+            }
+        }
+    }
+    var scenarioTrack = {
+        revolver: tracker(),
+        swinger: tracker(),
+        index: 0
+    }
+    var midY = Math.floor((canvas.height - gutter.x) / 2 + gutter.x)
     $.each(results, function (i, point) {
         var x = pos.x(point.time)
         if (x === priorX) {
@@ -518,12 +534,29 @@ doors.plot = function (canvas, results, scenarios, scale) {
 
         // Arrivals
         $.each(point.arrivals, function (doorName, ppm) {
+            scenarioTrack[doorName].add(ppm)
             var direction = doorName === 'revolver' ? 1 : -1 // up or down, that is
-            var offset = Math.floor(direction * ppm * scale.y / 2)
-            var midY = Math.floor((canvas.height - gutter.x) / 2 + gutter.x)
+            var offset = Math.floor(ppm * scale.y / 2) * direction
             _.fillStyle = 'lightgray'
             _.fillRect(x - xSize, midY + direction, xSize, offset)
         })
+
+        var scenario = scenarios[scenarioTrack.index] || []
+        if (point.time > scenario[0]) {
+            ;(function () {
+                var track = scenarioTrack[scenario[1]]
+                var direction = scenario[1] === 'revolver' ? 1 : -1
+                var length = scaled(point.time - track.start, 'x')
+                var offset = Math.floor(track.average() * scale.y / 2) * direction
+                if (length > 1 && Math.abs(offset) > 1) {
+                    _.fillStyle = 'black'
+                    var label = scenario[1] === 'revolver' ? 'Revolving' : 'Swinging'
+                    _.fillText(label, x - length, midY + offset)
+                }
+                track.reset(point.time)
+                ++scenarioTrack.index
+            })()
+        }
 
         var plotTemp = function (temp, color, fill) {
             var y = pos.y(temp)
@@ -615,8 +648,7 @@ doors.plot = function (canvas, results, scenarios, scale) {
 }
 
 doors.results = function (resultsUrl, scenariosUrl, interval) {
-    'use strict'
-
+    /* Load and parse experiment results, periodically, if desired */
     var onupdate = []
 
     return (function () {
@@ -676,10 +708,8 @@ doors.results = function (resultsUrl, scenariosUrl, interval) {
     })()
 }
 
-/* An interactive chart using the markup structure from chart.html */
 doors.chart = function (container) {
-    'use strict'
-
+    /* An interactive chart using the markup structure from chart.html */
     container = $(container)
     var canvas = container.find('canvas').first()
 
@@ -780,3 +810,5 @@ doors.chart = function (container) {
         }
     }
 }
+
+})()
