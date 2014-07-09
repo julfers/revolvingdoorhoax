@@ -7,16 +7,48 @@
     <script src="js/doors.js"></script>
 </head>
 <body>
+    <div class="scenarios">
+        <h1>Scenarios</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>Start</th>
+                    <th>Duration</th>
+                    <th>Revolver traffic</th>
+                    <th>Swinger traffic</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="start"></td>
+                    <td class="end"></td>
+                    <td class="revolver"></td>
+                    <td class="swinger"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
     <div class="chart">
         <!-- filled with content from chart.html -->
     </div>
     <script>
     ;(function () {
         'use strict'
+        var scenarioTr = $('.scenarios tbody tr').remove()
+
         $('.chart').load('chart.html', function () {
             var chart = doors.chart($('.chart'))
             doors.results('/results/051100-0855.csv', '/results/051100-0855-scenarios.csv')
-            .onupdate(chart.update)
+            .onupdate(function (results, scenarios) {
+                chart.update(results, scenarios)
+                var tbody = $('.scenarios tbody').empty()
+                $.each(scenarios, function (i, scenario) {
+                    scenarioTr.clone().appendTo(tbody)
+                        .find('.start').text(scenario[0]).end()
+                        .find('.end').text((scenarios[i + 1] || [])[0]).end()
+                        .find('.' + scenario[1]).text(scenario[2])
+                })
+            })
         })
     })()
     </script>
