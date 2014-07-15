@@ -669,13 +669,13 @@ doors.results = function (resultsUrl, scenariosUrl, interval) {
             var lines = $.grep(text.split(/$/gm), function (line) {
                 return !/^\s*$/.test(line)
             })
-            return $.map(lines, function (line) {
-                return [$.map(line.split(/,/g), function (x, i) {
+            return lines.map(function (line) {
+                return line.split(/,/g).map(function (x) {
                     if (/\d+(?:\.\d+)/.test(x)) {
                         return parseFloat(x)
                     }
                     return x
-                })] // jQuery.map flattens arrays one level
+                })
             })
         }
         var onready = []
@@ -684,7 +684,7 @@ doors.results = function (resultsUrl, scenariosUrl, interval) {
                 $.get(resultsUrl, null, null, 'text'),
                 $.get(scenariosUrl, null, null, 'text'))
             .done(function (resultsReply, scenariosReply) {
-                var results = $.map(csv(resultsReply[0]), function (row) {
+                var results = csv(resultsReply[0]).map(function (row) {
                     return point(row)
                 })
                 var scenarios = csv(scenariosReply[0])
