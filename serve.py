@@ -235,12 +235,17 @@ class LiveSiteHandler(_LiveSiteHandler):
             elif root == 'results':
                 if sub:
                     csv = ''
-                    with open('results/' + sub) as results_file:
-                        if sub.endswith('-scenarios.csv'):
+                    if sub.endswith('-scenarios.csv'):
+                        with open('results/' + sub) as results_file:
                             csv = results_file.read()
-                        else:
-                            log = stats.from_csv(results_file.read())
-                            csv = stats.to_csv(stats.summarize(log))
+                    else:
+                        name, interval = re.search(r'^([^.]+)\.(\d*)', sub).groups()
+                        with open('results/' + name + '.csv') as results_file:
+                            if interval:
+                                log = stats.from_csv(results_file.read())
+                                csv = stats.to_csv(stats.summarize(log, int(interval)))
+                            else:
+                                csv = results_file.read()
                     self._send_content(csv, 'text/csv')
                 else:
                     with lock:

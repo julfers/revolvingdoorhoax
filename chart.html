@@ -1,6 +1,6 @@
 <style>
 /* Charts */
-.chart {
+.plot {
     position: relative;
 }
 .loading-message {
@@ -53,45 +53,68 @@ td.temp {
 }
 </style>
 <div aria-busy="true">
-    <canvas height="400" width="600"></canvas>
-    <label class="position">
-        <span>Values at position</span>
-        <input type="range" disabled>
-    </label>
-    <table class="points">
-        <thead><tr>
-            <th>Time</th>
-            <th class="temp">Temperature</th>
-            <th>Revolving door</th>
-            <th>Swinging door</th>
-        </tr></thead>
-        <tbody>
-            <tr>
-                <td class="time"></td>
-                <td class="temp">
-                    <h4>Outdoor</h4>
-                    <ol>
-                        <li class="temp value"></li>
-                        <li class="temp value"></li>
-                    </ol>
-                    <h4>Indoor</h4>
-                    <ol>
-                        <li class="temp value"></li>
-                        <li class="temp value"></li>
-                    </ol>
-                    <h4 class="delta">Difference</h4>
-                    <div class="temp delta value"></div>
-                </td>
-                <td class="revolver arrivals"></td>
-                <td class="swinger arrivals"></td>
-            </tr>
-        </tbody>
-    </table>
-    <div class="zoomed">
+    <div class="ranges">
+        <h1>Ranges</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>Range</th>
+                    <th>Revolver scenario</th>
+                    <th>Swinger scenario</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <label>
+                            <input type="radio" name="range">
+                            <span class="start"></span> to <span class="end"></span>
+                        </label>
+                    </td>
+                    <td class="revolver"></td>
+                    <td class="swinger"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="plot">
         <canvas height="400" width="600"></canvas>
+        <label class="position">
+            <span>Values at position</span>
+            <input type="range" disabled>
+        </label>
+        <table class="points">
+            <thead><tr>
+                <th>Time</th>
+                <th class="temp">Temperature</th>
+                <th>Revolving door</th>
+                <th>Swinging door</th>
+            </tr></thead>
+            <tbody>
+                <tr>
+                    <td class="time"></td>
+                    <td class="temp">
+                        <h4>Outdoor</h4>
+                        <ol>
+                            <li class="temp value"></li>
+                            <li class="temp value"></li>
+                        </ol>
+                        <h4>Indoor</h4>
+                        <ol>
+                            <li class="temp value"></li>
+                            <li class="temp value"></li>
+                        </ol>
+                        <h4 class="delta">Difference</h4>
+                        <div class="temp delta value"></div>
+                    </td>
+                    <td class="revolver arrivals"></td>
+                    <td class="swinger arrivals"></td>
+                </tr>
+            </tbody>
+        </table>
     </div>
     <div class="zoomed">
-        <canvas height="400" width="600"></canvas>
+        <div><!-- will be a clone of the plot --></div>
     </div>
-    <div class="loading-message">Loading...</div>
+    <div class="loading-message">Loading&hellip;</div>
 </div>

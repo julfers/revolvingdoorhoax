@@ -711,9 +711,12 @@ doors.results = function (resultsUrl, scenariosUrl, interval) {
 doors.chart = function (container) {
     /* An interactive chart using the markup structure from chart.html */
     container = $(container)
-    var canvas = container.find('canvas').first()
+    var plotMarkup = container.find('.plot').clone()
 
     var timeText = function (seconds) {
+        if (seconds !== seconds) {
+            return ''
+        }
         seconds = Math.round(seconds)
         var hours = Math.floor(seconds / 60 / 60)
         seconds -= hours * 60 * 60
@@ -721,92 +724,129 @@ doors.chart = function (container) {
         return hours + ':' + ('00' + minutes).slice(-2)
     }
 
-    var placeOnChart = function (node, temp, time) {
-        var top = plot.pos.y(temp) - node.height() * 1.5
-        top -= node.is('.delta')
-            ? canvas.height() / 2
-            : 0
-        return node.css({
-            position: 'absolute',
-            top: top,
-            left: plot.pos.x(time)
-        })
+    var canvasX = function (canvas, event) {
+        return event.originalEvent.pageX - canvas.offset().left    
     }
 
-    var plot // set when updated
-    var displayValues = function (position) {
-        if (!plot) {
-            return
+    var addBehaviors = function (target, plot) {
+        var canvas = target.find('canvas')
+
+        var placeOnChart = function (node, temp, time) {
+            var top = plot.pos.y(temp) - node.height() * 1.5
+            top -= node.is('.delta')
+                ? canvas[0].height / 2
+                : 0
+            return node.css({
+                position: 'absolute',
+                top: top,
+                left: plot.pos.x(time)
+            })
         }
-        var point = plot.point(position)
-        var row = container.find('table.points tbody tr').last()
-        row.find('.time').text(timeText(point.time))
 
-        $.each(point.temps, function (i, temp) {
-            var reading = row.find('.temp li').eq(i)
-                .text(Math.round(temp / 3))
-            placeOnChart(reading, temp, point.time)
+        var displayValues = function (position) {
+            var point = plot.point(position)
+            var row = target.find('table.points tbody tr').last()
+            row.find('.time').text(timeText(point.time))
+
+            $.each(point.temps, function (i, temp) {
+                var reading = row.find('.temp li').eq(i)
+                    .text(Math.round(temp / 3))
+                placeOnChart(reading, temp, point.time)
+            })
+            
+            var delta = row.find('.temp.delta').text(Math.round(point.delta() / 3))
+            placeOnChart(delta, point.delta(), point.time)
+
+            $.each(point.arrivals, function (k, v) {
+                row.find('.arrivals.' + k).text(v)
+            })
+        }        
+
+        target.find('.position input')
+            .attr({
+                min: 0,
+                max: canvas.attr('width')
+            })
+            .val(canvas.attr('width'))
+            .on('change', function () {
+                displayValues($(this).val())
+            })
+            .removeAttr('disabled')
+        canvas.on('mousemove', function (event) {
+            target.find('.position input')
+                .val(canvasX(canvas, event))
+                .trigger('change')
         })
-        
-        var delta = row.find('.temp.delta').text(Math.round(point.delta() / 3))
-        placeOnChart(delta, point.delta(), point.time)
 
-        $.each(point.arrivals, function (k, v) {
-            row.find('.arrivals.' + k).text(v)
-        })
-    }
-    var canvasX = function (event) { // X position relative to canvas
-        return event.originalEvent.pageX - canvas.offset().left
-    }
-
-    container.find('.position input')
-        .attr({
-            min: 0,
-            max: canvas.attr('width')
-        })
-        .val(canvas.attr('width'))
-        .on('change', function () {
-            displayValues($(this).val())
-        })
-        .removeAttr('disabled')
-    canvas.on('mousemove', function (event) {
-        container.find('.position input')
-            .val(canvasX(event))
-            .trigger('change')
-    })
-
-    var zoomNext = 0
-
-    var zoomIn = function (event) {
-        if (!plot) {
-            return
-        }
-        var range = plot.range(canvasX(event))
-        var sliced = plot.slice(range)
-        doors.plot(
-            container.find('.zoomed canvas')[zoomNext],
-            sliced.results, sliced.scenarios,
-            {y: plot.scale.y})
-        zoomNext = (zoomNext + 1) % container.find('.zoomed canvas').length
-        displayValues(canvasX(event))
-    }
-    container.find('canvas').on('click', zoomIn)
-
-    return {
-        update: function (results, scenarios) {
-            container.find('[aria-busy]').removeAttr('aria-busy')
-            plot = doors.plot(canvas[0], results, scenarios)
-            var lastPoint = plot.point(canvas.width())
+        var placeLabels = function (lastPoint) {
             for (var cut = 0; cut < 2; cut++) {
-                placeOnChart(container.find('.temp h4').eq(cut),
+                placeOnChart(target.find('.temp h4').eq(cut),
                         ( lastPoint.temps.slice(cut * 2)[0]
                         + lastPoint.temps.slice(cut * 2)[1]
                         ) / 2,
                     lastPoint.time)
             }
-            placeOnChart(container.find('.temp h4.delta'), lastPoint.delta(), lastPoint.time)
+            placeOnChart(target.find('.temp h4.delta'), lastPoint.delta(), lastPoint.time)
+        }
 
-            displayValues(container.find('.position input').val())
+        return {
+            refresh: function (lastPoint) {
+                displayValues(target.find('.position input').val())
+                placeLabels(lastPoint)
+            }
+        }
+    };
+
+    var create = function (scaleY) {
+        var target = plotMarkup.clone()
+        var canvas = target.find('canvas')
+        var plot, behaviors
+        return {
+            update: function (results, scenarios) {
+                plot = doors.plot(canvas[0], results, scenarios, {y: scaleY})
+                behaviors = behaviors || addBehaviors(target, plot)
+                behaviors.refresh(results[results.length - 1])
+                return this
+            },
+            zoomed: function (event) {
+                var range = plot.range(canvasX(canvas, event))
+                var sliced = plot.slice(range)
+                return create(plot.scale.y)
+                    .update(sliced.results, sliced.scenarios)
+            },
+            target: target
+        }
+    }
+
+    var mainPlot
+    var scenarioTr = container.find('.ranges tbody tr').remove()
+    return {
+        update: function (results, scenarios) {
+            container.find('[aria-busy]').removeAttr('aria-busy')
+
+            var rangeTbody = container.find('.ranges tbody').empty()
+            $.each(scenarios, function (i, scenario) {
+                var start = parseInt(scenario[0], 10)
+                var end = parseInt(scenarios[i + 1] || [][0])
+                scenarioTr.clone().appendTo(rangeTbody)
+                    .find('.start').text(timeText(start)).end()
+                    .find('.end').text(timeText(end)).end()
+                    .find('.' + scenario[1]).text(scenario[2]).end()
+                    // .find('input[name=range]').on('change', function () {
+                    //     create(container.find('.zoomed > div'))
+                    // })
+            })
+
+            if (!mainPlot) {
+                mainPlot = create()
+                mainPlot.target
+                    .replaceAll(container.find('.plot'))
+                    .find('canvas').on('click', function (click) {
+                        mainPlot.zoomed(click).target
+                            .replaceAll(container.find('.zoomed > *'))
+                    })
+            }
+            mainPlot.update(results, scenarios)
         }
     }
 }

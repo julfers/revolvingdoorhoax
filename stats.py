@@ -46,7 +46,6 @@ def from_csv(csv):
     return log
 
 if __name__ == '__main__':
-    path = sys.argv[1]
-    with open(path) as log_csv:
+    with open(sys.argv[1]) as log_csv:
         log = from_csv(log_csv.read())
-    print to_csv(summarize(log))
+    print to_csv(summarize(log, int(sys.argv[2])))
