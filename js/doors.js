@@ -808,8 +808,16 @@ doors.chart = function (container) {
                 behaviors.refresh(results[results.length - 1])
                 return this
             },
-            zoomed: function (event) {
-                var range = plot.range(canvasX(canvas, event))
+            rangeZoom: function (start, end) {
+                var slice = plot.slice({
+                    min: start,
+                    max: end
+                })
+                return create(plot.scale.y)
+                    .update(slice.results, slice.scenarios)
+            },
+            mouseZoom: function (mouse) {
+                var range = plot.range(canvasX(canvas, mouse))
                 var sliced = plot.slice(range)
                 return create(plot.scale.y)
                     .update(sliced.results, sliced.scenarios)
@@ -818,7 +826,7 @@ doors.chart = function (container) {
         }
     }
 
-    var mainPlot
+    var mainChart
     var scenarioTr = container.find('.ranges tbody tr').remove()
     return {
         update: function (results, scenarios) {
@@ -832,21 +840,22 @@ doors.chart = function (container) {
                     .find('.start').text(timeText(start)).end()
                     .find('.end').text(timeText(end)).end()
                     .find('.' + scenario[1]).text(scenario[2]).end()
-                    // .find('input[name=range]').on('change', function () {
-                    //     create(container.find('.zoomed > div'))
-                    // })
+                    .find('input[name=range]').on('click', function () {
+                        mainChart.rangeZoom(start, end).target
+                            .replaceAll(container.find('.zoomed > *'))
+                    })
             })
 
-            if (!mainPlot) {
-                mainPlot = create()
-                mainPlot.target
+            if (!mainChart) {
+                mainChart = create()
+                mainChart.target
                     .replaceAll(container.find('.plot'))
                     .find('canvas').on('click', function (click) {
-                        mainPlot.zoomed(click).target
+                        mainChart.mouseZoom(click).target
                             .replaceAll(container.find('.zoomed > *'))
                     })
             }
-            mainPlot.update(results, scenarios)
+            mainChart.update(results, scenarios)
         }
     }
 }
