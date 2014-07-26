@@ -826,6 +826,10 @@ doors.chart = function (container) {
         }
     }
 
+    var showZoomed = function (zoomed) {
+        zoomed.target.replaceAll(container.find('.zoomed > *'))
+    }
+
     var mainChart
     var scenarioTr = container.find('.ranges tbody tr').remove()
     return {
@@ -833,29 +837,40 @@ doors.chart = function (container) {
             container.find('[aria-busy]').removeAttr('aria-busy')
 
             var rangeTbody = container.find('.ranges tbody').empty()
-            $.each(scenarios, function (i, scenario) {
-                var start = parseInt(scenario[0], 10)
-                var end = parseInt(scenarios[i + 1] || [][0])
-                scenarioTr.clone().appendTo(rangeTbody)
+            var scenarioRange = function (i) {
+                return {
+                    start: parseFloat((scenarios[i] || [results[0].time])[0]),
+                    end: parseFloat((scenarios[i + 1] || [results[results.length - 1].time])[0])
+                }
+            }
+            var displayRange = function (start, end) {
+                return scenarioTr.clone().appendTo(rangeTbody)
                     .find('.start').text(timeText(start)).end()
                     .find('.end').text(timeText(end)).end()
-                    .find('.' + scenario[1]).text(scenario[2]).end()
                     .find('input[name=range]').on('click', function () {
-                        mainChart.rangeZoom(start, end).target
-                            .replaceAll(container.find('.zoomed > *'))
-                    })
-            })
+                        showZoomed(mainChart.rangeZoom(start, end))
+                    }).end()
+            }
+            for (var i = -1; i < scenarios.length; i++) {
+                var range = scenarioRange(i)
+                var traffic = {
+                    door: (scenarios[i] || [])[1],
+                    scenario: (scenarios[i] || [])[2]
+                }
+                displayRange(range.start, range.end)
+                    .find('.' + traffic.door).text(traffic.scenario).end()
+            }
 
             if (!mainChart) {
                 mainChart = create()
                 mainChart.target
                     .replaceAll(container.find('.plot'))
                     .find('canvas').on('click', function (click) {
-                        mainChart.mouseZoom(click).target
-                            .replaceAll(container.find('.zoomed > *'))
+                        showZoomed(mainChart.mouseZoom(click))
                     })
             }
             mainChart.update(results, scenarios)
+            rangeTbody.find('input[name=range]').last().click()
         }
     }
 }
