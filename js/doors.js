@@ -463,10 +463,6 @@ doors.plot = function (canvas, results, scenarios, scale) {
         x: {},
         y: {}
     }
-    
-    var _ = canvas.getContext('2d')
-    _.clearRect(0, 0, canvas.width, canvas.height)
-
     range.x.min = results[0].time
     range.x.max = results[results.length - 1].time
     range.y = {}
@@ -484,101 +480,107 @@ doors.plot = function (canvas, results, scenarios, scale) {
     if (scale.y == null) {
         scale.y = (canvas.height - gutter.y * 2) / ((range.y.max - range.y.min) || 1)
     }
+    
+    var _ = canvas.getContext('2d')
+    var draw = function () {
+        _.clearRect(0, 0, canvas.width, canvas.height)
 
-    // Gridlines every ten minutes, dark line every hour
-    for (var gridLine = range.x.min + 10 * 60; gridLine < range.x.max; gridLine += 10 * 60) {
-        _.fillStyle = (gridLine - range.x.min) % (10 * 60 * 6) === 0 ? 'black' : 'lightgray'
-        _.fillRect(pos.x(gridLine), 0, 1, scale.y)
-    }
-
-    // Scenario changes
-    $.each(scenarios, function (i, row) {
-        _.fillStyle = 'gray'
-        _.fillRect(pos.x(row[0]), 0, 1, canvas.height)
-    })
-
-    // Results
-    var xSize = Math.ceil(Math.max(scale.x, 1))
-    var priorX
-    var tracker = function () {
-        return {
-            sum: 0,
-            count: 0,
-            start: 0,
-            average: function () {
-                return this.sum / this.count
-            },
-            reset: function (time) {
-                this.sum = 0
-                this.count = 0
-                this.start = time
-            },
-            add: function (v) {
-                this.sum += v
-                ++this.count
-            }
+        // Gridlines every ten minutes, dark line every hour
+        for (var gridLine = range.x.min + 10 * 60; gridLine < range.x.max; gridLine += 10 * 60) {
+            _.fillStyle = (gridLine - range.x.min) % (10 * 60 * 6) === 0 ? 'black' : 'lightgray'
+            _.fillRect(pos.x(gridLine), 0, 1, scale.y)
         }
-    }
-    var scenarioTrack = {
-        revolver: tracker(),
-        swinger: tracker(),
-        index: 0
-    }
-    var midY = Math.floor((canvas.height - gutter.x) / 2 + gutter.x)
-    $.each(results, function (i, point) {
-        var x = pos.x(point.time)
-        if (x === priorX) {
-            return
-        }
-        priorX = x
 
-        // Arrivals
-        $.each(point.arrivals, function (doorName, ppm) {
-            scenarioTrack[doorName].add(ppm)
-            var direction = doorName === 'revolver' ? 1 : -1 // up or down, that is
-            var offset = Math.floor(ppm * scale.y / 2) * direction
-            _.fillStyle = 'lightgray'
-            _.fillRect(x - xSize, midY + direction, xSize, offset)
+        // Scenario changes
+        $.each(scenarios, function (i, row) {
+            _.fillStyle = 'gray'
+            _.fillRect(pos.x(row[0]), 0, 1, canvas.height)
         })
 
-        var scenario = scenarios[scenarioTrack.index] || []
-        if (point.time > scenario[0]) {
-            ;(function () {
-                var track = scenarioTrack[scenario[1]]
-                var direction = scenario[1] === 'revolver' ? 1 : -1
-                var length = scaled(point.time - track.start, 'x')
-                var offset = Math.floor(track.average() * scale.y / 2) * direction
-                if (length > 1 && Math.abs(offset) > 1) {
-                    _.fillStyle = 'black'
-                    var label = scenario[1] === 'revolver' ? 'Revolving' : 'Swinging'
-                    _.fillText(label, x - length, midY + offset)
+        // Results
+        var xSize = Math.ceil(Math.max(scale.x, 1))
+        var priorX
+        var tracker = function () {
+            return {
+                sum: 0,
+                count: 0,
+                start: 0,
+                average: function () {
+                    return this.sum / this.count
+                },
+                reset: function (time) {
+                    this.sum = 0
+                    this.count = 0
+                    this.start = time
+                },
+                add: function (v) {
+                    this.sum += v
+                    ++this.count
                 }
-                track.reset(point.time)
-                ++scenarioTrack.index
-            })()
-        }
-
-        var plotTemp = function (temp, color, fill) {
-            var y = pos.y(temp)
-            _.fillStyle = color
-            // Difference between top and bottom indicates precision
-            var yMin = Math.floor(y - scale.y / 2)
-            var yMax = Math.floor(y + scale.y / 2)
-            if (fill) {
-                _.fillRect(x - xSize, yMin, xSize, scale.y)
-            } else {
-                _.fillRect(x - xSize, yMin, xSize, 1)
-                _.fillRect(x - xSize, yMax, xSize, 1)
             }
         }
+        var scenarioTrack = {
+            revolver: tracker(),
+            swinger: tracker(),
+            index: 0
+        }
+        var midY = Math.floor((canvas.height - gutter.x) / 2 + gutter.x)
+        $.each(results, function (i, point) {
+            var x = pos.x(point.time)
+            if (x === priorX) {
+                return
+            }
+            priorX = x
 
-        // Temperature
-        $.each(point.temps, function (j, temp) {
-            plotTemp(temp, ['indigo', 'blue', 'indianred', 'maroon'][j])
+            // Arrivals
+            $.each(point.arrivals, function (doorName, ppm) {
+                scenarioTrack[doorName].add(ppm)
+                var direction = doorName === 'revolver' ? 1 : -1 // up or down, that is
+                var offset = Math.floor(ppm * scale.y / 2) * direction
+                _.fillStyle = 'lightgray'
+                _.fillRect(x - xSize, midY + direction, xSize, offset)
+            })
+
+            var scenario = scenarios[scenarioTrack.index] || []
+            if (point.time > scenario[0]) {
+                ;(function () {
+                    var track = scenarioTrack[scenario[1]]
+                    var direction = scenario[1] === 'revolver' ? 1 : -1
+                    var length = scaled(point.time - track.start, 'x')
+                    var offset = Math.floor(track.average() * scale.y / 2) * direction
+                    if (length > 1 && Math.abs(offset) > 1) {
+                        _.fillStyle = 'black'
+                        var label = scenario[1] === 'revolver' ? 'Revolving' : 'Swinging'
+                        _.fillText(label, x - length, midY + offset)
+                    }
+                    track.reset(point.time)
+                    ++scenarioTrack.index
+                })()
+            }
+
+            var plotTemp = function (temp, color, fill) {
+                var y = pos.y(temp)
+                _.fillStyle = color
+                // Difference between top and bottom indicates precision
+                var yMin = Math.floor(y - scale.y / 2)
+                var yMax = Math.floor(y + scale.y / 2)
+                if (fill) {
+                    _.fillRect(x - xSize, yMin, xSize, scale.y)
+                } else {
+                    _.fillRect(x - xSize, yMin, xSize, 1)
+                    _.fillRect(x - xSize, yMax, xSize, 1)
+                }
+            }
+
+            // Temperature
+            $.each(point.temps, function (j, temp) {
+                plotTemp(temp, ['indigo', 'blue', 'indianred', 'maroon'][j])
+            })
+            // Temperature difference (average indoor - average outdoor)
+            plotTemp(point.delta() + (range.y.max - range.y.min) / 2, 'black', true)
         })
-        // Temperature difference (average indoor - average outdoor)
-        plotTemp(point.delta() + (range.y.max - range.y.min) / 2, 'black', true)
-    })
+    }
+
     var index = function (x) {
         var pos = Math.floor(x / (canvas.width - gutter.x) * results.length)
         if (pos > results.length - 1) {
@@ -590,6 +592,15 @@ doors.plot = function (canvas, results, scenarios, scale) {
         return pos
     }
     return {
+        draw: function (highlightRange) {
+            draw()
+            if (highlightRange) {
+                _.fillStyle = 'orange'
+                var x = pos.x(highlightRange.min || 0)
+                var width = pos.x(highlightRange.max || results[results.length - 1].time) - x
+                _.fillRect(x, canvas.height - scale.y, width, scale.y)
+            }
+        },
         point: function (x) {
             /* Given a coordinate relative to canvas dimensions, return the data point that
                corresponds */
@@ -806,19 +817,19 @@ doors.chart = function (container) {
                 plot = doors.plot(canvas[0], results, scenarios, {y: scaleY})
                 behaviors = behaviors || addBehaviors(target, plot)
                 behaviors.refresh(results[results.length - 1])
+                plot.draw(scaleY && {})
                 return this
             },
-            rangeZoom: function (start, end) {
-                var slice = plot.slice({
-                    min: start,
-                    max: end
-                })
+            rangeZoom: function (range) {
+                var slice = plot.slice(range)
+                plot.draw(range)
                 return create(plot.scale.y)
                     .update(slice.results, slice.scenarios)
             },
             mouseZoom: function (mouse) {
                 var range = plot.range(canvasX(canvas, mouse))
                 var sliced = plot.slice(range)
+                plot.draw(range)
                 return create(plot.scale.y)
                     .update(sliced.results, sliced.scenarios)
             },
@@ -848,7 +859,10 @@ doors.chart = function (container) {
                     .find('.start').text(timeText(start)).end()
                     .find('.end').text(timeText(end)).end()
                     .find('input[name=range]').on('click', function () {
-                        showZoomed(mainChart.rangeZoom(start, end))
+                        showZoomed(mainChart.rangeZoom({
+                            min: start,
+                            max: end
+                        }))
                     }).end()
             }
             for (var i = -1; i < scenarios.length; i++) {
