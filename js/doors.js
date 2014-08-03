@@ -437,13 +437,12 @@ doors.monitor = function (revolver, swinger, canvas) {
     }
 }
 
-doors.plot = function (canvas, results, scenarios, scale) {
+doors.plot = function (canvas, results, scenarios, yRange) {
     /* Experiment result charting */
     if (!results.length) {
         return
     }
 
-    scale = scale || {}
     var gutter = {
         x: 0,
         y: Math.floor(canvas.height * 0.05)
@@ -460,27 +459,30 @@ doors.plot = function (canvas, results, scenarios, scale) {
         }
     }
     var range = {
-        x: {},
+        x: {
+            min: results[0].time,
+            max: results[results.length - 1].time
+        },
         y: {}
     }
-    range.x.min = results[0].time
-    range.x.max = results[results.length - 1].time
-    range.y = {}
-    $.each(results, function (i, point) {
-        var min = Math.min.apply(Math, point.temps)
-        var max = Math.max.apply(Math, point.temps)
-        range.y.min = range.y.min == null ? min : Math.min(range.y.min, min)
-        range.y.max = range.y.max == null ? max : Math.max(range.y.max, max)
-    })
+    if (yRange) {
+        range.y = yRange
+    } else {
+        range.y = {}
+        $.each(results, function (i, point) {
+            var min = Math.min.apply(Math, point.temps)
+            var max = Math.max.apply(Math, point.temps)
+            range.y.min = range.y.min == null ? min : Math.min(range.y.min, min)
+            range.y.max = range.y.max == null ? max : Math.max(range.y.max, max)
+        })
+    }
 
-    if (scale.x == null) {
-        scale.x = Math.min((canvas.width - gutter.x) / ((range.x.max - range.x.min) || 1),
-                           canvas.width * 0.01)
+    var scale = {
+        x: Math.min((canvas.width - gutter.x) / ((range.x.max - range.x.min) || 1),
+                           canvas.width * 0.01),
+        y: (canvas.height - gutter.y * 2) / ((range.y.max - range.y.min) || 1)
     }
-    if (scale.y == null) {
-        scale.y = (canvas.height - gutter.y * 2) / ((range.y.max - range.y.min) || 1)
-    }
-    
+
     var _ = canvas.getContext('2d')
     var draw = function () {
         _.clearRect(0, 0, canvas.width, canvas.height)
@@ -567,12 +569,12 @@ doors.plot = function (canvas, results, scenarios, scale) {
         return pos
     }
     return {
-        draw: function (highlightRange) {
+        draw: function (highlightScenario) {
             draw()
-            if (highlightRange) {
+            if (highlightScenario) {
                 _.fillStyle = 'orange'
-                var x = pos.x(highlightRange.min || 0)
-                var width = pos.x(highlightRange.max || results[results.length - 1].time) - x
+                var x = pos.x(highlightScenario.start || 0)
+                var width = pos.x(highlightScenario.end || results[results.length - 1].time) - x
                 _.fillRect(x, canvas.height - scale.y, width, scale.y)
             }
         },
@@ -581,27 +583,10 @@ doors.plot = function (canvas, results, scenarios, scale) {
                corresponds */
             return results[index(x)]
         },
-        range: function (x) {
-            /* Given a coordinate relative to canvas dimensions, return the scenario that overlaps
-               that coordinate, or if given no argument, the entire data range.
-            */
-            if (x == null) {
-                return {
-                    min: results[0].time,
-                    max: results[results.length - 1].time
-                }
-            }
-            var p = results[index(x)]
-            var range
-            $.each(scenarios, function (i, scenario) {
-                if (p.time >= scenario.start && p.time <= scenario.end) {
-                    range = scenario
-                }
-            })
-            return range
-        },
-        scale: scale,
-        pos: pos
+        pos: pos,
+        results: results,
+        scenarios: scenarios,
+        yRange: range.y,
     }
 }
 
@@ -804,36 +789,34 @@ doors.chart = function (container) {
         }
     };
 
-    var create = function (scaleY) {
+    var create = function (yRange) {
         var target = plotMarkup.clone()
         var canvas = target.find('canvas')
         var plot, behaviors
         return {
             update: function (results, scenarios) {
-                plot = doors.plot(canvas[0], results, scenarios, {y: scaleY})
+                plot = doors.plot(canvas[0], results, scenarios, yRange)
                 behaviors = behaviors || addBehaviors(target, plot)
                 behaviors.refresh(results[results.length - 1])
-                plot.draw(scaleY && {})
+                plot.draw(yRange && {})
                 return this
             },
             rangeZoom: function (scenario) {
-                var slice = scenario.slice()
-                plot.draw({
-                    min: scenario.start,
-                    max: scenario.end
-                })
-                return create(plot.scale.y)
-                    .update(slice.results, slice.scenarios)
+                var sliced = scenario.slice()
+                plot.draw(scenario)
+                container.find('input[name=range]').filter(function () {
+                    return this.value === scenario.start + '-' + scenario.end
+                }).prop('checked', true)
+                return create(plot.yRange)
+                    .update(sliced.results, sliced.scenarios)
             },
             mouseZoom: function (mouse) {
-                var scenario = plot.range(canvasX(canvas, mouse))
-                var sliced = scenario.slice()
-                plot.draw({
-                    min: scenario.start,
-                    max: scenario.end
-                })
-                return create(plot.scale.y)
-                    .update(sliced.results, sliced.scenarios)
+                var x = canvasX(canvas, mouse)
+                var p = plot.point(x)
+                var scenario = $.grep(plot.scenarios, function (s) {
+                    return p.time >= s.start && p.time <= s.end
+                })[0]
+                return this.rangeZoom(scenario)
             },
             target: target
         }
@@ -866,16 +849,16 @@ doors.chart = function (container) {
                     .find('.start').text(timeText(scenario.start)).end()
                     .find('.end').text(timeText(scenario.end)).end()
                     .find('.primary-door').text(primaryDoor).end()
-                    .find('input[name=range]').on('click', function () {
-                        showZoomed(mainChart.rangeZoom(scenario))
-                    }).end()
+                    .find('input[name=range]')
+                        .on('change', function () {
+                            showZoomed(mainChart.rangeZoom(scenario))
+                        })
+                        .attr('value', scenario.start + '-' + scenario.end)
+                        .end()
             }
             $.each(scenarios, function (i, scenario) {
                 if (scenario.end - scenario.start > 60) {
-                    var rangeTr = displayRange(scenario)
-                    $.each(['revolver', 'swinger'], function (j, doorName) {
-                        rangeTr.find('.' + doorName).text(scenario[doorName].name)
-                    })
+                    displayRange(scenario)
                 }
             })
 
