@@ -492,39 +492,16 @@ doors.plot = function (canvas, results, scenarios, scale) {
         }
 
         // Scenario changes
-        $.each(scenarios, function (i, row) {
+        $.each(scenarios, function (i, scenario) {
             _.fillStyle = 'gray'
-            _.fillRect(pos.x(row[0]), 0, 1, canvas.height)
+            _.fillRect(pos.x(scenario.end), 0, 1, canvas.height)
         })
 
         // Results
         var xSize = Math.ceil(Math.max(scale.x, 1))
         var priorX
-        var tracker = function () {
-            return {
-                sum: 0,
-                count: 0,
-                start: 0,
-                average: function () {
-                    return this.sum / this.count
-                },
-                reset: function (time) {
-                    this.sum = 0
-                    this.count = 0
-                    this.start = time
-                },
-                add: function (v) {
-                    this.sum += v
-                    ++this.count
-                }
-            }
-        }
-        var scenarioTrack = {
-            revolver: tracker(),
-            swinger: tracker(),
-            index: 0
-        }
         var midY = Math.floor((canvas.height - gutter.x) / 2 + gutter.x)
+        var scenarioIndex = 0
         $.each(results, function (i, point) {
             var x = pos.x(point.time)
             if (x === priorX) {
@@ -534,28 +511,26 @@ doors.plot = function (canvas, results, scenarios, scale) {
 
             // Arrivals
             $.each(point.arrivals, function (doorName, ppm) {
-                scenarioTrack[doorName].add(ppm)
                 var direction = doorName === 'revolver' ? 1 : -1 // up or down, that is
                 var offset = Math.floor(ppm * scale.y / 2) * direction
                 _.fillStyle = 'lightgray'
                 _.fillRect(x - xSize, midY + direction, xSize, offset)
             })
 
-            var scenario = scenarios[scenarioTrack.index] || []
-            if (point.time > scenario[0]) {
-                ;(function () {
-                    var track = scenarioTrack[scenario[1]]
-                    var direction = scenario[1] === 'revolver' ? 1 : -1
-                    var length = scaled(point.time - track.start, 'x')
-                    var offset = Math.floor(track.average() * scale.y / 2) * direction
+            var scenario = scenarios[scenarioIndex] || {}
+            if (scenario.end < point.time) {
+                ++scenarioIndex
+                $.each(['swinger', 'revolver'], function (i, doorName) {
+                    var direction = i * 2 - 1
+                    var length = scaled(scenario.end - scenario.start, 'x')
+                    var offset = Math.floor(scenario[doorName].average() * scale.y / 2)
+                        * direction
                     if (length > 1 && Math.abs(offset) > 1) {
                         _.fillStyle = 'black'
-                        var label = scenario[1] === 'revolver' ? 'Revolving' : 'Swinging'
-                        _.fillText(label, x - length, midY + offset)
+                        var label = doorName === 'revolver' ? 'Revolving' : 'Swinging'
+                        _.fillText(label, pos.x(scenario.start), midY + offset)
                     }
-                    track.reset(point.time)
-                    ++scenarioTrack.index
-                })()
+                })
             }
 
             var plotTemp = function (temp, color, fill) {
@@ -607,9 +582,8 @@ doors.plot = function (canvas, results, scenarios, scale) {
             return results[index(x)]
         },
         range: function (x) {
-            /* Given a coordinate relative to canvas dimensions, return the scenario range that
-               overlaps that coordinate. When given no x-coordinate, return the chart's entire
-               range.
+            /* Given a coordinate relative to canvas dimensions, return the scenario that overlaps
+               that coordinate, or if given no argument, the entire data range.
             */
             if (x == null) {
                 return {
@@ -618,40 +592,13 @@ doors.plot = function (canvas, results, scenarios, scale) {
                 }
             }
             var p = results[index(x)]
-            var running = {}
-            var range = {
-                min: 0,
-                max: null
-            }
-            $.each(scenarios, function (i, s) {
-                running[s[1]] = s[2]
-                if (s[0] < p.time) {
-                    range.min = s[0]
-                    $.extend(range, running)
-                }
-                if (range.max == null && s[0] > p.time) {
-                    range.max = s[0]
+            var range
+            $.each(scenarios, function (i, scenario) {
+                if (p.time >= scenario.start && p.time <= scenario.end) {
+                    range = scenario
                 }
             })
             return range
-        },
-        slice: function (range) {
-            if (!range) {
-                return {
-                    results: results,
-                    scenarios: scenarios
-                }
-            } else {
-                var s = function (a) {
-                    return $.grep(a, function (v) {
-                        return v.time >= range.min && (range.max == null || v.time <= range.max)
-                    })
-                }
-                return {
-                    results: s(results),
-                    scenarios: s(scenarios)
-                }
-            }
         },
         scale: scale,
         pos: pos
@@ -663,19 +610,6 @@ doors.results = function (resultsUrl, scenariosUrl, interval) {
     var onupdate = []
 
     return (function () {
-        var point = function (row) {
-            return {
-                time: row[0],
-                arrivals: {
-                    revolver: row[1],
-                    swinger: row[2]
-                },
-                temps: row.slice(3),
-                delta: function () {
-                    return (this.temps[2] + this.temps[3] - this.temps[0] - this.temps[1]) / 2
-                }
-            }
-        }
         var csv = function (text) {
             var lines = $.grep(text.split(/$/gm), function (line) {
                 return !/^\s*$/.test(line)
@@ -689,6 +623,64 @@ doors.results = function (resultsUrl, scenariosUrl, interval) {
                 })
             })
         }
+        var point = function (row) {
+            return {
+                time: row[0],
+                arrivals: {
+                    revolver: row[1],
+                    swinger: row[2]
+                },
+                temps: row.slice(3),
+                delta: function () {
+                    return (this.temps[2] + this.temps[3] - this.temps[0] - this.temps[1]) / 2
+                }
+            }
+        }
+        var scenario = function (results, commands, i) {
+            var keyed = {
+                start: (commands[i] || [results[0].time])[0],
+                end: (commands[i + 1] || [results[results.length - 1].time])[0]
+            }
+            var firstResult, lastResult;
+            $.each(results, function (j, result) {
+                if (result.time >= keyed.start) {
+                    if (firstResult == null) {
+                        firstResult = j
+                    }
+                    if (result.time <= keyed.end) {
+                        lastResult = j
+                    }
+                }
+            })
+            keyed.slice = function () {
+                return {
+                    results: results.slice(firstResult, lastResult + 1),
+                    scenarios: [keyed]
+                }
+            }
+            var stats = function (doorName) {
+                return {
+                    average: function () {
+                        var sum = 0
+                        for (var i = firstResult; i <= lastResult; i++) {
+                            sum += results[i].arrivals[doorName]
+                        }
+                        return sum / (lastResult - firstResult)
+                    }
+                }
+            }
+            $.each(['revolver', 'swinger'], function (j, doorName) {
+                for (var k = i; k > -1; k--) {
+                    if (commands[k][1] === doorName) {
+                        keyed[doorName] = {name: commands[k][2]}
+                        break
+                    }
+                }
+                keyed[doorName] = keyed[doorName] || {name: 'manual'}
+                $.extend(keyed[doorName], stats(doorName))
+            })
+            return keyed
+        }
         var onready = []
         var tick = function () {
             return $.when(
@@ -698,7 +690,11 @@ doors.results = function (resultsUrl, scenariosUrl, interval) {
                 var results = csv(resultsReply[0]).map(function (row) {
                     return point(row)
                 })
-                var scenarios = csv(scenariosReply[0])
+                var scenarios = []
+                var commands = csv(scenariosReply[0])
+                for (var i = -1; i < commands.length; i++) {
+                    scenarios.push(scenario(results, commands, i))
+                }
                 if (interval) {
                     setTimeout(tick, interval)
                 }
@@ -820,16 +816,22 @@ doors.chart = function (container) {
                 plot.draw(scaleY && {})
                 return this
             },
-            rangeZoom: function (range) {
-                var slice = plot.slice(range)
-                plot.draw(range)
+            rangeZoom: function (scenario) {
+                var slice = scenario.slice()
+                plot.draw({
+                    min: scenario.start,
+                    max: scenario.end
+                })
                 return create(plot.scale.y)
                     .update(slice.results, slice.scenarios)
             },
             mouseZoom: function (mouse) {
-                var range = plot.range(canvasX(canvas, mouse))
-                var sliced = plot.slice(range)
-                plot.draw(range)
+                var scenario = plot.range(canvasX(canvas, mouse))
+                var sliced = scenario.slice()
+                plot.draw({
+                    min: scenario.start,
+                    max: scenario.end
+                })
                 return create(plot.scale.y)
                     .update(sliced.results, sliced.scenarios)
             },
@@ -848,32 +850,34 @@ doors.chart = function (container) {
             container.find('[aria-busy]').removeAttr('aria-busy')
 
             var rangeTbody = container.find('.ranges tbody').empty()
-            var scenarioRange = function (i) {
-                return {
-                    start: parseFloat((scenarios[i] || [results[0].time])[0]),
-                    end: parseFloat((scenarios[i + 1] || [results[results.length - 1].time])[0])
+            var displayRange = function (scenario) {
+                var primaryDoor
+                if (scenario.revolver.name !== 'manual' && scenario.swinger.name !== 'manual') {
+                    primaryDoor = 'Both'
+                } else {
+                    if (scenario.revolver.name !== 'manual') {
+                        primaryDoor = 'Revolving'
+                    }
+                    if (scenario.swinger.name !== 'manual') {
+                        primaryDoor = 'Swinging'
+                    }
                 }
-            }
-            var displayRange = function (start, end) {
                 return scenarioTr.clone().appendTo(rangeTbody)
-                    .find('.start').text(timeText(start)).end()
-                    .find('.end').text(timeText(end)).end()
+                    .find('.start').text(timeText(scenario.start)).end()
+                    .find('.end').text(timeText(scenario.end)).end()
+                    .find('.primary-door').text(primaryDoor).end()
                     .find('input[name=range]').on('click', function () {
-                        showZoomed(mainChart.rangeZoom({
-                            min: start,
-                            max: end
-                        }))
+                        showZoomed(mainChart.rangeZoom(scenario))
                     }).end()
             }
-            for (var i = -1; i < scenarios.length; i++) {
-                var range = scenarioRange(i)
-                var traffic = {
-                    door: (scenarios[i] || [])[1],
-                    scenario: (scenarios[i] || [])[2]
+            $.each(scenarios, function (i, scenario) {
+                if (scenario.end - scenario.start > 60) {
+                    var rangeTr = displayRange(scenario)
+                    $.each(['revolver', 'swinger'], function (j, doorName) {
+                        rangeTr.find('.' + doorName).text(scenario[doorName].name)
+                    })
                 }
-                displayRange(range.start, range.end)
-                    .find('.' + traffic.door).text(traffic.scenario).end()
-            }
+            })
 
             if (!mainChart) {
                 mainChart = create()
