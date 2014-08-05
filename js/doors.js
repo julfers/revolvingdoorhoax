@@ -643,6 +643,20 @@ doors.results = function (resultsUrl, scenariosUrl, interval) {
                     scenarios: [keyed]
                 }
             }
+            keyed.deltaMode = function () {
+                var temps = {}
+                for (var i = firstResult; i <= lastResult; i++) {
+                    var temp = Math.round(results[i].delta() / 3)
+                    temps[temp] = temps[temp] || 0
+                    ++temps[temp]
+                }
+                var sorted = $.map(temps, function (v, k) {
+                    return {temp: k, frequency: v}
+                }).sort(function (a, b) {
+                    return b.frequency - a.frequency
+                })
+                return sorted[0].temp
+            }
             var stats = function (doorName) {
                 return {
                     average: function () {
@@ -807,6 +821,16 @@ doors.chart = function (container) {
                 container.find('input[name=range]').filter(function () {
                     return this.value === scenario.start + '-' + scenario.end
                 }).prop('checked', true)
+
+                var ppm = 0
+                $.each(['revolver', 'swinger'], function (i, doorName) {
+                    if (scenario[doorName].name !== 'manual') {
+                        ppm = Math.round(scenario[doorName].average())
+                    }
+                })
+                container.find('.ppm.average').text(ppm)
+                container.find('.temp.delta.mode').text(scenario.deltaMode())
+                
                 return create(plot.yRange)
                     .update(sliced.results, sliced.scenarios)
             },

@@ -1,6 +1,6 @@
 <style>
 /* Charts */
-.plot, .ranges, .ranges > table, .zoomed {
+.plot, .ranges {
     display: inline-block;
     vertical-align: top;
 }
@@ -53,6 +53,15 @@ td.temp {
     border-radius: 999px;
     display: inline-block;
 }
+.ranges > * {
+    display: inline-block;
+}
+.ranges .textual {
+    float: left;
+}
+.ranges .range-info {
+    width: 200px;
+}
 </style>
 <div aria-busy="true">
     <div class="plot">
@@ -92,25 +101,36 @@ td.temp {
         </table>
     </div>
     <div class="ranges">
-        <table>
-            <thead>
-                <tr>
-                    <th>Range</th>
-                    <th>Primary door</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>
-                        <label>
-                            <input type="radio" name="range">
-                            <span class="start"></span> to <span class="end"></span>
-                        </label>
-                    </td>
-                    <td class="primary-door"></td>
-                </tr>
-            </tbody>
-        </table>
+        <div class="textual">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Range (h:mm)</th>
+                        <th>Primary door</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <label>
+                                <input type="radio" name="range">
+                                <span class="start"></span> to <span class="end"></span>
+                            </label>
+                        </td>
+                        <td class="primary-door"></td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="range-info">
+                <p>
+                    <span class="ppm average"></span><span> people per minute (average)</span>
+                </p>
+                <p>
+                    <span class="temp delta mode"></span>
+                    <span> degrees Celcius temperature difference (mode)</span>
+                </p>
+            </div>
+        </div>
         <div class="zoomed">
             <div><!-- will be a clone of the plot --></div>
         </div>
