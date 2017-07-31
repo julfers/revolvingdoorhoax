@@ -1,0 +1,161 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>The MIT study &#8212; The great revolving door hoax 1 documentation</title>
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="/_static/js/lib/jquery-1.11.0.js"></script>
+    <script type="text/javascript" src="/_static/js/classify.js"></script>
+    <script type="text/javascript" src="/_static/js/lib/ASCIIMathML.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="MIT estimation method condensed" href="mit-study-distilled.html" />
+    <link rel="prev" title="Existing research" href="index.html" /> 
+  </head>
+  <body>
+<header >
+    <div><!-- for styling -->
+        <a href="../index.html">The revolving door hoax</a>
+        <a href="/experiment.html">The experiment</a>
+        <a href="/research/index.html">The research</a>
+        <a href="/results.html">The results</a>
+    </div>
+</header>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="the-mit-study">
+<h1>The MIT study<a class="headerlink" href="#the-mit-study" title="Permalink to this headline">¶</a></h1>
+<p>As described in <a class="reference external" href="research.html">this site’s research review</a>, the <a class="reference external" href="http://web.mit.edu/~slanou/www/shared_documents/366_06_REVOLVING_DOOR.pdf">MIT study (PDF)</a> did <em>not</em> study revolving
+door efficiency and never made the “eight times less air” assertion widely attributed to it. It did,
+however, claim increasing revolving doors use would significantly reduce heating and cooling cost.</p>
+<p>So, who are we to doubt, you might say, “they are MIT; you’re just a guy with an Arduino.”</p>
+<p>Ok, seekers of truth, let us replicate the calculations. Those who follow will find the paper’s
+energy calculations dubious.</p>
+<p>You can read the study to infer its methods, or refer to the <a class="reference external" href="mit-study-distilled.html">condensed version</a>.</p>
+<p>According to the paper, swinging door air infiltration can be read off two charts, one for leakage
+through seals and the other for leakage due to opening for traffic. Reading the infiltration rate
+on both charts depends on air pressure, so first attempt to calculation the pressure difference
+between indoor and outdoor. The given formula, <code class="docutils literal"><span class="pre">`Deltap</span> <span class="pre">=</span> <span class="pre">p_(w)</span> <span class="pre">-</span> <span class="pre">Deltap_(s)`</span></code>, subtracts stack
+pressure from window pressure.</p>
+<p>The formula <code class="docutils literal"><span class="pre">`C_1</span> <span class="pre">rho_0</span> <span class="pre">((T_o</span> <span class="pre">-</span> <span class="pre">T_i)</span> <span class="pre">/</span> <span class="pre">T_i)</span> <span class="pre">g</span> <span class="pre">(H_&quot;NPL&quot;</span> <span class="pre">-</span> <span class="pre">H)`</span></code> yields stack pressure from
+given numbers and the estimated 70 foot height of the building, plugging in numbers turns stack
+pressure into this function of outdoor temperature:</p>
+<p><code class="docutils literal"><span class="pre">`0.00598</span> <span class="pre">*</span> <span class="pre">0.075</span> <span class="pre">((T_o</span> <span class="pre">-</span> <span class="pre">532)</span> <span class="pre">/</span> <span class="pre">532)</span> <span class="pre">32.2</span> <span class="pre">*</span> <span class="pre">(35</span> <span class="pre">-</span> <span class="pre">3.5)`</span></code> or <code class="docutils literal"><span class="pre">`0.000855</span> <span class="pre">DeltaT`</span></code></p>
+<p>In the coldest and warmest months:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="53%" />
+<col width="48%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">February (38 degrees)</th>
+<th class="head">August (82 degrees)</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>-0.029</td>
+<td>0.009</td>
+</tr>
+</tbody>
+</table>
+<p>At this point, the calculation should incorporate pressure due to wind, interpolating values given,
+a function of “wind pressure coefficient” and wind speed:</p>
+<p><code class="docutils literal"><span class="pre">`p_w</span> <span class="pre">=</span> <span class="pre">0.0129</span> <span class="pre">*</span> <span class="pre">0.075</span> <span class="pre">C_p</span> <span class="pre">U^2</span> <span class="pre">/</span> <span class="pre">2`</span></code></p>
+<p>The study gives figures from which to read the wind pressure coefficient, but no indication of which
+value it actually used. Interpreting the pressure coefficient diagrams and schematics of the a
+building front, a reasonable range of coefficients would be -0.7 to 0.7. At most, however, the
+coefficient, ranges from -1.2 to 0.9, so we can calculate wind pressure range and the highest and
+lowest wind speed months, coincidentally the same as those for temperature:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="42%" />
+<col width="37%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Coefficient</th>
+<th class="head">February (13 mph wind)</th>
+<th class="head">August (9 mph wind)</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>-1.2</td>
+<td>-0.098</td>
+<td>-0.047</td>
+</tr>
+<tr class="row-odd"><td>0.9</td>
+<td>0.074</td>
+<td>0.035</td>
+</tr>
+</tbody>
+</table>
+<p>Thus, depending on the wind pressure coefficient chosen, total pressure difference may be in one of
+these ranges:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="38%" />
+<col width="29%" />
+<col width="33%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">February</th>
+<th class="head">August</th>
+<th class="head">October</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>-0.069</td>
+<td>-0.056</td>
+<td>-0.089</td>
+</tr>
+<tr class="row-odd"><td>0.103</td>
+<td>0.026</td>
+<td>0.083</td>
+</tr>
+</tbody>
+</table>
+<p><em>Work in progress, pending verification, it appears that the MIT study overestimates air
+infiltration through swinging doors.</em></p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+<footer>
+    <a href="index.html">Home</a>
+    <a href="https://bitbucket.org/julfers/revolvingdoorhoax">Source code</a>
+    <small>Copyright 2017, WTFPL</small>
+
+    <script>
+    $('code.docutils.literal').each(function () {
+        // This whackiness removes the spans that docutils puts in inline code literals so that
+        // ascii math/mathjax can parse them.
+        this.textContent = this.textContent
+    })
+    </script>
+</footer>
+
+  </body>
+</html>

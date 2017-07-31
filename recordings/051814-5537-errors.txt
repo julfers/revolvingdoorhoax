@@ -1,8 +1,0 @@
-Illegal duration on step 82: -0.151138
-Illegal duration on step 87: -0.270796
-Illegal duration on step 93: -0.416194
-Illegal duration on step 100: -0.849128
-Illegal duration on step 101: -0.23075
-Illegal duration on step 110: -0.699129
-Illegal duration on step 111: -0.074368
-Illegal duration on step 141: -0.374121

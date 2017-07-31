@@ -1,0 +1,309 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>MIT estimation method condensed &#8212; The great revolving door hoax 1 documentation</title>
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="/_static/js/lib/jquery-1.11.0.js"></script>
+    <script type="text/javascript" src="/_static/js/classify.js"></script>
+    <script type="text/javascript" src="/_static/js/lib/ASCIIMathML.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="The results" href="../results.html" />
+    <link rel="prev" title="The MIT study" href="mit-study.html" /> 
+  </head>
+  <body>
+<header >
+    <div><!-- for styling -->
+        <a href="../index.html">The revolving door hoax</a>
+        <a href="/experiment.html">The experiment</a>
+        <a href="/research/index.html">The research</a>
+        <a href="/results.html">The results</a>
+    </div>
+</header>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="mit-estimation-method-condensed">
+<h1>MIT estimation method condensed<a class="headerlink" href="#mit-estimation-method-condensed" title="Permalink to this headline">¶</a></h1>
+<p>This distills and annotates the portions of the <a class="reference external" href="http://web.mit.edu/~slanou/www/shared_documents/366_06_REVOLVING_DOOR.pdf">MIT study (PDF)</a> applicable to how the study
+computed heating and cooling load attributable to doors, section 10.1, “air leakage estimation,”
+in particular.</p>
+<p>Original text is in regular font. <em>Italics</em> indicate expository additions.</p>
+<hr class="docutils" />
+<p>This calculation uses door-usage data obtained from the experiments on <a class="reference external" href="http://whereis.mit.edu/?go=E25">building E25</a>, <em>Whitaker
+College</em>, which has an average of 837 passaged per hour, <em>so we can infer that all calculations
+apply to building E25 only.</em></p>
+<p>Some results can be obtained analytically with formulae, but others can only be interpolated
+based on charts.</p>
+<div class="section" id="air-leakage-through-revolving-doors">
+<h2>Air leakage through revolving doors<a class="headerlink" href="#air-leakage-through-revolving-doors" title="Permalink to this headline">¶</a></h2>
+<p>It is valid to calculate the total air leakage due to revolving door usage by simply summing the
+leakage past door seals and cracks and the the displaced air due to the revolving of the door.</p>
+<div class="section" id="revolving-door-seal-leakage">
+<h3>Revolving door seal leakage<a class="headerlink" href="#revolving-door-seal-leakage" title="Permalink to this headline">¶</a></h3>
+<p>Infiltration though seals without visible cracks <em>and</em> through door seals with visible cracks can be
+estimated by using figure B1 and B2, <em>but B2 seems mislabelled, as it only makes sense to use it for
+infiltration through swinging door seals, later. Revolving door seal leakage can be read directly
+from B1. Total revolving door leakage can be assumed the sum of leakage from all doors, that is, the
+two in building E25, seen on figure A1.</em></p>
+<div class="figure" id="id1">
+<a class="reference external image-reference" href="../_static/img/schutrum-seal-leakage.png"><img alt="Schutrum's revolving door seal leakage chart" src="../_images/schutrum-seal-leakage-small.png" /></a>
+<p class="caption"><span class="caption-text">Figure B1: infiltration through new and worn door seals (door not revolving)</span></p>
+</div>
+<div class="figure" id="id2">
+<a class="reference external image-reference" href="../_static/img/mit-study-map.png"><img alt="MIT campus map with location of doors studies" src="../_images/mit-study-map.png" style="height: 400px;" /></a>
+<p class="caption"><span class="caption-text">Figure A1: map of MIT campus with building numbers. Revolving doors on campus are represented by
+the magenta blocks. The blue circles represent the revolving doors examined in the study.</span></p>
+</div>
+</div>
+<div class="section" id="revolving-door-motion-leakage">
+<h3>Revolving door motion leakage<a class="headerlink" href="#revolving-door-motion-leakage" title="Permalink to this headline">¶</a></h3>
+<p>If the number of users is higher than 250 passages per hour, air leakage due to the revolving of the
+door can be directly obtained from figure B3. Otherwise, the door’s average revolving speed and
+operating time fraction need to be estimated first, using figure B4. Then, with the estimated
+averaged revolving speed, the infiltration can be obtained from figure B5.</p>
+<div class="figure" id="id3">
+<a class="reference external image-reference" href="../_static/img/schutrum-infiltration-v-traffic.png"><img alt="Schutrum's graph of infiltration by people per hour" src="../_images/schutrum-infiltration-v-traffic-small.png" /></a>
+<p class="caption"><span class="caption-text">Figure B3: infiltration through manually operated revolving door (air movement 35 fpm indoors,
+air leakages past door seals deducted)</span></p>
+</div>
+<div class="figure" id="id4">
+<a class="reference external image-reference" href="../_static/img/schutrum-door-use-rates.png"><img alt="Schutrum's operating time and speed by people per hour" src="../_images/schutrum-door-use-rates-small.png" /></a>
+<p class="caption"><span class="caption-text">Figure B4: Operating time and averaged rpm vs. traffic rate of manually operated revolving door</span></p>
+</div>
+<div class="figure" id="id5">
+<a class="reference external image-reference" href="../_static/img/schutrum-infiltration-v-rpm.png"><img alt="Schutrum's graph of infiltration by revolutions per minute" src="../_images/schutrum-infiltration-v-rpm-small.png" /></a>
+<p class="caption"><span class="caption-text">Figure B5: infiltration vs. rpm and indoor-outdoor air temperature difference (air leakages
+past door seals deducted)</span></p>
+</div>
+</div>
+</div>
+<div class="section" id="air-leakage-through-swing-doors">
+<h2>Air leakage through swing doors<a class="headerlink" href="#air-leakage-through-swing-doors" title="Permalink to this headline">¶</a></h2>
+<p>Total air leakage through a swing door is a combination of the infiltration due to the swinging of
+the door and the leakage past the door’s cracks.</p>
+<div class="section" id="swinging-door-seal-leakage">
+<h3>Swinging door seal leakage<a class="headerlink" href="#swinging-door-seal-leakage" title="Permalink to this headline">¶</a></h3>
+<p>The swing doors at building E25 have no visible cracks, to make current calculations conservative
+and applicable as the weather stripping deteriorates, these calculations assume total visible cracks
+10 inches long and 0.5 inches wide, <em>presumably a sum for all swinging doors in E25, not per door.
+Figure B2 gives infiltration through swinging door seals:</em></p>
+<div class="figure" id="id6">
+<a class="reference external image-reference" href="../_static/img/tc-min-crack-leakage.png"><img alt="Min's visible crack leakage chart" src="../_images/tc-min-crack-leakage.png" style="height: 400px;" /></a>
+<p class="caption"><span class="caption-text">Figure B2: infiltration through door cracks (door not revolving, <em>probably a typo</em>)</span></p>
+</div>
+</div>
+<div class="section" id="swinging-door-motion-leakage">
+<h3>Swinging door motion leakage<a class="headerlink" href="#swinging-door-motion-leakage" title="Permalink to this headline">¶</a></h3>
+<p>Air infiltration due to swing door usage depends on the indoor-outdoor pressure differential and the
+entrance coefficient. The entrance coefficient can be obtained from figures B6 and B7, <em>but since
+B7 applies to vestibule entrances, it appears inapplicable to building E25. Furthermore, since
+nothing in the information given for revolving doors indicates a correction for human obstruction,
+assume swinging door calculations are also uncorrected.</em> Once the entrance coefficient is known, the
+infiltration due to the swinging of the door can be estimated using figure B8.</p>
+<div class="figure" id="id7">
+<a class="reference external image-reference" href="../_static/img/tc-min-entrance-coefficients.png"><img alt="Min's graph of entrance coefficient by people per hour" src="../_images/tc-min-entrance-coefficients.png" style="height: 400px;" /></a>
+<p class="caption"><span class="caption-text">Figure B6: Entrance coefficients for single-bank entrances</span></p>
+</div>
+<div class="figure" id="id8">
+<a class="reference external image-reference" href="../_static/img/tc-min-infiltration-v-pressure.png"><img alt="Min's graph of infiltration by pressure differential" src="../_images/tc-min-infiltration-v-pressure.png" style="height: 400px;" /></a>
+<p class="caption"><span class="caption-text">Figure B8: (Swing door) entrance infiltration for various pressure differentials and traffic
+rates, <em>or, rather, entrance coefficient, derived from people per hour</em></span></p>
+</div>
+</div>
+<div class="section" id="pressure-differential">
+<h3>Pressure differential<a class="headerlink" href="#pressure-differential" title="Permalink to this headline">¶</a></h3>
+<p><em>Seal leakage, for both revolving and swinging doors depends on the difference between indoor and
+outdoor air pressure. Infiltration from swinging door motion also depends on pressure differential,
+but infiltration from revolving door motion does not.</em> The total pressure differential is coupled
+by two components: stack pressure difference and wind pressure.</p>
+<p>Stack difference is a function of indoor and outdoor air temperature and densities, the height of
+the building and the height of the door. <em>We can assume the door is 7 feet tall, and estimate height
+of E25 as 70 feet from this picture:</em></p>
+<a class="reference external image-reference" href="http://en.wikipedia.org/wiki/File:MIT_Whitaker_College.jpg"><img alt="Picture of building E25" src="../_images/mit-building-e25.jpg" style="height: 400px;" /></a>
+<p>Equation C1 shows how to calculate the total pressure differential. Equation C2 shows how to
+calculate the stack pressure difference. Equaction C3 and figures B9 and B10 can be used to
+calculate the wind pressure. <em>Only one of figures B9 and B10 should be necessary, but the paper does
+not indicate which part of the figures to read for wind surface pressure coefficients.</em></p>
+<dl class="docutils">
+<dt>C1: Total pressure (inches of water)</dt>
+<dd><code class="docutils literal"><span class="pre">`Deltap</span> <span class="pre">=</span> <span class="pre">p_(w)</span> <span class="pre">-</span> <span class="pre">Deltap_(s)`</span></code></dd>
+<dt>C2: Stack pressure (inches of water)</dt>
+<dd><p class="first"><code class="docutils literal"><span class="pre">`C_1</span> <span class="pre">rho_0</span> <span class="pre">((T_o</span> <span class="pre">-</span> <span class="pre">T_i)</span> <span class="pre">/</span> <span class="pre">T_i)</span> <span class="pre">g</span> <span class="pre">(H_&quot;NPL&quot;</span> <span class="pre">-</span> <span class="pre">H)`</span></code></p>
+<dl class="last docutils">
+<dt><code class="docutils literal"><span class="pre">`C_1</span> <span class="pre">=</span> <span class="pre">0.00598`</span></code></dt>
+<dd>Unit conversion factor, <code class="docutils literal"><span class="pre">`(\&quot;inches</span> <span class="pre">of</span> <span class="pre">water&quot;)</span> <span class="pre">*</span> <span class="pre">&quot;ft&quot;</span> <span class="pre">*</span> <span class="pre">&quot;s&quot;^2</span> <span class="pre">/</span> <span class="pre">&quot;lb&quot;`</span></code></dd>
+<dt><code class="docutils literal"><span class="pre">`rho_o</span> <span class="pre">=</span> <span class="pre">0.075`</span></code></dt>
+<dd>Outdoor air density, <code class="docutils literal"><span class="pre">`&quot;lb&quot;</span> <span class="pre">/</span> <span class="pre">&quot;ft&quot;^3`</span></code>. <em>In the original, captions for equation C3 indicate
+a value, but not here. Assume they should be the same.</em></dd>
+<dt><code class="docutils literal"><span class="pre">`T_o`</span></code></dt>
+<dd>Outdoor temperature, degrees Rankine. <em>Average temperature by month from table D1.</em></dd>
+<dt><code class="docutils literal"><span class="pre">`T_i</span> <span class="pre">=</span> <span class="pre">532`</span></code></dt>
+<dd>Indoor temperature, degrees Rankine.</dd>
+<dt><code class="docutils literal"><span class="pre">`g</span> <span class="pre">=</span> <span class="pre">32.2`</span></code></dt>
+<dd>Gravitational acceleration, <code class="docutils literal"><span class="pre">`&quot;ft&quot;/&quot;s&quot;^2`</span></code></dd>
+<dt><code class="docutils literal"><span class="pre">`H_&quot;NPL&quot;</span> <span class="pre">=</span> <span class="pre">35`</span></code></dt>
+<dd>Height of neutral pressure level, <code class="docutils literal"><span class="pre">`&quot;ft&quot;`</span></code>, may use half the height of the building</dd>
+<dt><code class="docutils literal"><span class="pre">`H</span> <span class="pre">=</span> <span class="pre">3.5`</span></code></dt>
+<dd>Height of the point of interest, <code class="docutils literal"><span class="pre">`&quot;ft&quot;`</span></code>, may use half the height of the door</dd>
+</dl>
+</dd>
+<dt>C3: Wind pressure (inches of water)</dt>
+<dd><p class="first"><code class="docutils literal"><span class="pre">`p_w</span> <span class="pre">=</span> <span class="pre">C_2</span> <span class="pre">C_p</span> <span class="pre">rho</span> <span class="pre">U^2</span> <span class="pre">/</span> <span class="pre">2`</span></code></p>
+<dl class="last docutils">
+<dt><code class="docutils literal"><span class="pre">`C_2</span> <span class="pre">=</span> <span class="pre">0.0129`</span></code></dt>
+<dd>Unit conversion factor, <code class="docutils literal"><span class="pre">`(&quot;inches</span> <span class="pre">of</span> <span class="pre">water&quot;)</span> <span class="pre">*</span> <span class="pre">&quot;ft&quot;^3</span> <span class="pre">/</span> <span class="pre">(&quot;lb&quot;</span> <span class="pre">*</span> <span class="pre">&quot;mph&quot;^2)`</span></code></dd>
+<dt><code class="docutils literal"><span class="pre">`C_p`</span></code></dt>
+<dd>Wind surface pressure coefficient (see Figures B9 and B10), <em>but no indication of which
+value to use. If using figure B9, notice that the caption indicates the values should be
+divided by 100.</em></dd>
+<dt><code class="docutils literal"><span class="pre">`rho</span> <span class="pre">=</span> <span class="pre">0.075`</span></code></dt>
+<dd>Outdoor air density, <code class="docutils literal"><span class="pre">`&quot;lb&quot;/&quot;ft&quot;^3`</span></code></dd>
+<dt><code class="docutils literal"><span class="pre">`U`</span></code></dt>
+<dd>Wind speed, <code class="docutils literal"><span class="pre">`&quot;mph&quot;`</span></code>. <em>The average wind speed for the month, from table D1. No correction
+indicated for wind pressure being proportional to the square of wind speed.</em></dd>
+</dl>
+</dd>
+</dl>
+<div class="figure" id="id9">
+<a class="reference external image-reference" href="../_static/img/wind-pressure-coefficient-tall.png"><img alt="Wind pressure coefficients for tall buildings" src="../_images/wind-pressure-coefficient-tall.jpg" style="height: 400px;" /></a>
+<p class="caption"><span class="caption-text">Figure B9: Local pressure coefficients (<code class="docutils literal"><span class="pre">`C_p</span> <span class="pre">*</span> <span class="pre">100`</span></code>) for tall buildings with varying wind
+direction.</span></p>
+</div>
+<div class="figure" id="id10">
+<a class="reference external image-reference" href="../_static/img/wind-pressure-coefficient-short.png"><img alt="Wind pressure coefficients for low-rise buildings" src="../_images/wind-pressure-coefficient-short.jpg" style="height: 400px;" /></a>
+<p class="caption"><span class="caption-text">Figure B10: Local pressure coefficients for low-rise buildings with varying wind direction.</span></p>
+</div>
+<table border="1" class="docutils">
+<colgroup>
+<col width="10%" />
+<col width="49%" />
+<col width="41%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Month</th>
+<th class="head">Avg. High Temperature (F)</th>
+<th class="head">Avg. Wind Speed (mph)</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>Jan</td>
+<td>43</td>
+<td>12</td>
+</tr>
+<tr class="row-odd"><td>Feb</td>
+<td>38</td>
+<td>13</td>
+</tr>
+<tr class="row-even"><td>Mar</td>
+<td>47</td>
+<td>12</td>
+</tr>
+<tr class="row-odd"><td>Apr</td>
+<td>58</td>
+<td>11</td>
+</tr>
+<tr class="row-even"><td>May</td>
+<td>58</td>
+<td>11</td>
+</tr>
+<tr class="row-odd"><td>Jun</td>
+<td>77</td>
+<td>10</td>
+</tr>
+<tr class="row-even"><td>Jul</td>
+<td>81</td>
+<td>10</td>
+</tr>
+<tr class="row-odd"><td>Aug</td>
+<td>82</td>
+<td>9</td>
+</tr>
+<tr class="row-even"><td>Sep</td>
+<td>76</td>
+<td>10</td>
+</tr>
+<tr class="row-odd"><td>Oct</td>
+<td>61</td>
+<td>13</td>
+</tr>
+<tr class="row-even"><td>Nov</td>
+<td>54</td>
+<td>11</td>
+</tr>
+<tr class="row-odd"><td>Dec</td>
+<td>38</td>
+<td>12</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="section" id="energy-consumption">
+<h2>Energy consumption<a class="headerlink" href="#energy-consumption" title="Permalink to this headline">¶</a></h2>
+<p>The displaced heat, or thermal energy, must be offset by the building’s heating or air-conditioning
+equipment, assumed to be 60% efficient. Using the air leakage rate obtained from the previous
+calculation, equation B4 <em>[typo, actually C4]</em> shows how to calculate the total heat flow.</p>
+<dl class="docutils">
+<dt>C4: Heat transferred (Joules)</dt>
+<dd><p class="first"><code class="docutils literal"><span class="pre">`E_(ht)</span> <span class="pre">=</span> <span class="pre">(T_i</span> <span class="pre">-</span> <span class="pre">T_o)</span> <span class="pre">rho</span> <span class="pre">V</span> <span class="pre">C`</span></code></p>
+<dl class="last docutils">
+<dt><code class="docutils literal"><span class="pre">`T_i</span> <span class="pre">=</span> <span class="pre">22.2`</span></code></dt>
+<dd>Indoor air temperature, degrees Celcius</dd>
+<dt><code class="docutils literal"><span class="pre">`T_o`</span></code></dt>
+<dd>Indoor <em>[typo, actually outdoor]</em> air temperature, degrees Celcius</dd>
+<dt><code class="docutils literal"><span class="pre">`rho</span> <span class="pre">=</span> <span class="pre">1.2929`</span></code></dt>
+<dd>Air density, <code class="docutils literal"><span class="pre">`&quot;kg&quot;/&quot;m&quot;^3`</span></code>, <em>presumably outdoors. When converted to pounds per cubic
+foot, this is slightly higher than the 0.075 indicated for calculating pressure
+differential, but not by much.</em></dd>
+<dt><code class="docutils literal"><span class="pre">`V`</span></code></dt>
+<dd>Volume of air, <code class="docutils literal"><span class="pre">`&quot;m&quot;^3`</span></code>, <em>computed as described</em></dd>
+<dt><code class="docutils literal"><span class="pre">`C</span> <span class="pre">=</span> <span class="pre">1.03</span> <span class="pre">*</span> <span class="pre">10^3`</span></code></dt>
+<dd>Heat capacity, <code class="docutils literal"><span class="pre">`&quot;J&quot;/(&quot;kg&quot;</span> <span class="pre">*</span> <span class="pre">&quot;K&quot;)`</span></code></dd>
+</dl>
+</dd>
+</dl>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+<footer>
+    <a href="index.html">Home</a>
+    <a href="https://bitbucket.org/julfers/revolvingdoorhoax">Source code</a>
+    <small>Copyright 2017, WTFPL</small>
+
+    <script>
+    $('code.docutils.literal').each(function () {
+        // This whackiness removes the spans that docutils puts in inline code literals so that
+        // ascii math/mathjax can parse them.
+        this.textContent = this.textContent
+    })
+    </script>
+</footer>
+
+  </body>
+</html>

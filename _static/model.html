@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="/_static/js/lib/jquery-1.11.0.js"></script>
+    <script src="/_static/js/lib/skulpt.min.js"></script>
+    <script src="/_static/js/lib/skulpt-stdlib.js"></script>
+    <script src="/_static/js/lib/requestAnimationFrame.js"></script>
+    <script src="/_static/js/doors.js"></script>
+    <style>
+    .faults {
+        display: inline-block;
+        height: 400px;
+        padding-left: 0;
+        padding-right: 40px;
+        white-space: nowrap;
+        overflow: auto;
+
+        color: red;
+        list-style: none;
+    }
+    .scenarios th:first-child {
+        width: 300px;
+    }
+    .chart {
+        display: inline-block;
+    }
+    th {
+        text-align: left;
+    }
+
+    body.published .local {
+        display: none;
+    }
+    </style>
+</head>
+<body class="published">
+    <script>
+    if (/^localhost/.test(window.location.hostname)) {
+        // When on localhost, lack of the "published" class makes this assume it is actually
+        // connected to an Arduino
+        $('body').removeClass('published')
+    }
+    </script>
+    <canvas class="doors" height="400" width="600">
+        <div>Revolving door diagram that rotates when people arrive</div>
+        <div>Swinging door diagram that swings when people arrive</div>
+    </canvas>
+    <div class="local chart">
+        <!-- populated from chart.html -->
+    </div>
+    <ol class="local faults"></ol>
+    <fieldset class="local monitor">
+        <label>
+            <input type="radio" name="monitor" value="client" checked>
+            <span>Client</span>
+        </label>
+        <label>
+            <input type="radio" name="monitor" value="server">
+            <span>Server</span>
+        </label>
+    </fieldset>
+    <fieldset class="player-controls client-controls">
+        <legend>Player controls</legend>
+        <button class="play" disabled>Play</button>
+        <button class="pause">Pause</button>
+        <button class="step" disabled>Step</button>
+    </fieldset>
+    <fieldset class="people-controls">
+        <legend>People controls</legend>
+        <button class="arrive revolver">Arrive at revolver</button>
+        <button class="arrive swinger">Arrive at swinger</button>
+    </fieldset>
+    <fieldset class="scenarios">
+        <legend>Scenarios</legend>
+        <table>
+            <thead>
+                <tr>
+                    <th>Scenario</th>
+                    <th>Revolver</th>
+                    <th>Swinger</th>
+                    <th>Pattern</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="title"></td>
+                    <td>
+                        <input type="radio" name="revolver">
+                    </td>
+                    <td>
+                        <input type="radio" name="swinger">
+                    </td>
+                    <td>
+                        <canvas height="20" width="100">
+                            <ol></ol>
+                        </canvas>
+                    </td>
+                    <td class="description"></td>
+                </tr>
+            </tbody>
+        </table>
+    </fieldset>
+    <script>
+    ;(function () {
+        'use strict'
+        var model = {
+            revolver: new doors.RevolvingDoor(16, 3),
+            swinger: new doors.SwingingDoor(8, 7)
+        }
+        var monitor = doors.monitor(model.revolver, model.swinger, $('canvas.doors')[0])
+        var player = doors.player(model.revolver, model.swinger, $('canvas.doors')[0])
+        var withDisabling = function (fn) {
+            var startEnabled = $('input, button').not(':disabled').attr('disabled', true)
+            fn().always(function () {
+                startEnabled.removeAttr('disabled')
+            })
+        }
+
+        var scenarios = {}
+        
+        var loadScenario = function (doorName) {
+            var name = $('.scenarios input[name=' + doorName + ']:checked').val()
+            if (player) {
+                // Consider any line in the steps file that begins with a number an instruction
+                // to have that number of people arrive at that step, ignoring anything else
+                var arrivals = scenarios[name].arrivals
+                var step = 0
+                player.onstep[doorName] = function () {
+                    model[doorName].arriving += arrivals[step]
+                    step = (step + 1) % arrivals.length
+                }
+                // TODO: changing scenario should not unpause
+                player.play(millisPerStep())
+            } else {
+                return monitor[doorName].load(name)
+            }
+        }
+        var millisPerStep = function () {
+            return 625 // 6 rpm for a revolving door with granularity 16
+        }
+        var start = function () {
+            if ($('input[name=monitor]:checked').val() === 'server') {
+                player.pause()
+                player = null
+                $('.player-controls button').attr('disabled', true)
+                monitor = doors.monitor(model.revolver, model.swinger, $('canvas.doors')[0])
+            } else {
+                monitor.stop()
+                monitor = null
+                $('button.pause').removeAttr('disabled')
+                player = doors.player(model.revolver, model.swinger, $('canvas.doors')[0])
+                player.play(millisPerStep())
+            }
+            loadScenario('revolver')
+            loadScenario('swinger')
+        }
+
+        ;(function () {
+            var rowTemplate = $('fieldset.scenarios tbody tr').remove()
+            var loaders = $.map([
+                'manual',
+                'early-arrival',
+                'late-arrival',
+                '10ppm-apart',
+                '10ppm-cluster'
+            ], function (name) {
+                var row = rowTemplate.clone().appendTo('.scenarios tbody')
+                row.find('input').attr('value', name)
+                    .on('change', function () {
+                        loadScenario(this.name)
+                    })
+                if (name === 'manual') {
+                    row.find('input').prop('checked', true)
+                }
+                return $.get('/_static/scenarios/' + name + '.txt', null, null, 'text')
+                    .done(function (stepsFile) {
+                        var scenario = doors.scenario(stepsFile)
+                        scenarios[name] = scenario
+                        row.find('td.title').text(scenario.title)
+                        row.find('td.description').text(scenario.description)
+                    })
+            })
+            withDisabling(function () {
+                return $.when.apply($, loaders).done(function (a) {
+                    start()
+                })
+            })
+        })()
+
+        $('input[name=monitor]').on('change', start)
+
+        $.each(model, function (doorName, door) {
+            $('button.arrive.' + doorName).each(function () {
+                $(this).on('click', function () {
+                    if (monitor) {
+                        monitor[doorName].arrive()
+                    } else {
+                        ++door.arriving
+                        player.draw()
+                    }
+                })
+            })
+        })
+
+        $('button.play').on('click', function () {
+            player.play(millisPerStep())
+            $('button.pause').removeAttr('disabled')
+            $('button.step, button.play').attr('disabled', true)
+        })
+        $('button.pause').on('click', function () {
+            player.pause()
+            $('button.pause').attr('disabled', true)
+            $('button.play, button.step').removeAttr('disabled')
+        })
+        $('button.step').on('click', function () {
+            var enabled = $('.player-controls button').not(':disabled')
+                .attr('disabled', true)
+            player.step(millisPerStep(), function () {
+                enabled.removeAttr('disabled')
+            })
+        })
+
+        $('.chart').load('chart.html', function () {
+            var chart = doors.chart($('.chart'))
+            doors.results('/results', '/scenarios', 15000)
+                .onupdate(chart.update)
+        })
+    })()
+    </script>
+</body>
+</html>

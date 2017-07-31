@@ -1,60 +1,79 @@
-<!DOCTYPE html>
-<html>
-<head>
-    
-    <title>The experiment</title>
-    <link rel="stylesheet" href="style/global.css">
-    <script src="js/lib/skulpt.min.js"></script>
-<script src="js/lib/skulpt-stdlib.js"></script>
-<script src="js/lib/requestAnimationFrame.js"></script>
-<script src="js/lib/jquery-1.11.0.js"></script>
-<script src="js/lib/ASCIIMathML.js"></script>
-<script src="js/doors.js"></script>
-<script src="js/classify.js"></script>
-    <script src="http://fred-wang.github.io/mathml.css/mspace.js"></script>
-</head>
-<body>
-<header>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>The experiment &#8212; The great revolving door hoax 1 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="/_static/js/lib/jquery-1.11.0.js"></script>
+    <script type="text/javascript" src="/_static/js/classify.js"></script>
+    <script type="text/javascript" src="/_static/js/lib/ASCIIMathML.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Existing research" href="research/index.html" />
+    <link rel="prev" title="The great revolving door hoax" href="index.html" /> 
+  </head>
+  <body>
+<header >
     <div><!-- for styling -->
         <a href="index.html">The revolving door hoax</a>
-        <a href="experiment.html">The experiment</a>
-        <a href="research.html">The research</a>
+        <a href="/experiment.html">The experiment</a>
+        <a href="/research/index.html">The research</a>
+        <a href="/results.html">The results</a>
     </div>
 </header>
-    <div class="document" id="the-experiment">
-<h1 class="title">The experiment</h1>
-<img alt="Wide view of revolving door model" src="img/model-wide.jpg" style="width: 200px;" />
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="the-experiment">
+<h1>The experiment<a class="headerlink" href="#the-experiment" title="Permalink to this headline">¶</a></h1>
+<a class="reference external image-reference" href="_static/img/model-wide.jpg"><img alt="Wide view of revolving door model" src="_images/model-wide-small.jpg" /></a>
 <p>This experiment intends to answer, in a manner accessible to average door users, whether their
 choices of a revolving door versus regular might justifiably be thought to reduce energy
 consumption.</p>
 <p>The experiment uses a heated tiny building that automatically opens its doors in proportion to a
 rate of traffic. By measuring the drop in temperature caused by different numbers of simulated
 people arriving, we should see whether, all else equal, the revolving door expends less heat.</p>
-<p><em>Model construction and programming is still in progress, more details to follow</em></p>
-<p>You can run an (incomplete) in-browser demo at <a class="reference external" href="model.html">model.html</a></p>
 <div class="section" id="construction">
-<h1>Construction</h1>
-<a class="reference external image-reference" href="img/exterior-schematic.jpg"><img alt="Exterior door position schematic" src="img/exterior-schematic.jpg" style="width: 300px;" /></a>
+<h2>Construction<a class="headerlink" href="#construction" title="Permalink to this headline">¶</a></h2>
+<a class="reference external image-reference" href="_static/img/exterior-schematic.jpg"><img alt="Exterior door position schematic" src="_images/exterior-schematic-small.jpg" /></a>
 <p>This model is approximately one foot on each side, built mostly from medium-density fiberboard,
 3/4-inch for walls and 1/4-inch for a revolving door and a swinging door, placed approximately
 equidistant from the building center.</p>
 <div class="section" id="interior">
-<h2>Interior</h2>
+<h3>Interior<a class="headerlink" href="#interior" title="Permalink to this headline">¶</a></h3>
 <p>Each wall is a 12 by 12 inch square, making the building slightly oblong. Inside, two sensors lie
 six and seven inches from the interior front wall.</p>
-<a class="reference external image-reference" href="img/model-inside.jpg"><img alt="Interior model picture" src="img/model-inside.jpg" style="height: 200px;" /></a>
-<a class="reference external image-reference" href="img/interior-schematic.jpg"><img alt="Interior model schematic" src="img/interior-schematic.jpg" style="height: 200px;" /></a>
+<a class="reference external image-reference" href="_static/img/model-inside.jpg"><img alt="Interior model picture" src="_images/model-inside-small.jpg" /></a>
+<a class="reference external image-reference" href="_static/img/interior-schematic.jpg"><img alt="Interior model schematic" src="_images/interior-schematic-small.jpg" /></a>
 <p>Two light bulbs provide heat for the building; they remain on throughout the experiment so a
 constant amount of energy flows into the model. Between the heaters and the sensors, a quarter-inch
 fiberboard barrier blocks direct incandescent heat, but allows air flow through half-inch gap at the
 bottom.</p>
 </div>
 <div class="section" id="revolving-door-enclosure">
-<h2>Revolving door enclosure</h2>
+<h3>Revolving door enclosure<a class="headerlink" href="#revolving-door-enclosure" title="Permalink to this headline">¶</a></h3>
 <p>For the revolving door enclosure, the model uses 4-inch PVC pipe. Since the reference full-sized
 door wings were 3 by 7 feet each, this dictates 1/18 scale, making each wing 2 inches by 4 and 5/8
 inches.</p>
-<a class="reference external image-reference" href="img/revolver-enclosure-schematic.jpg"><img alt="Revolving door enclosure schematic" src="img/revolver-enclosure-schematic.jpg" style="width: 300px;" /></a>
+<a class="reference external image-reference" href="_static/img/revolver-enclosure-schematic.jpg"><img alt="Revolving door enclosure schematic" src="_images/revolver-enclosure-schematic-small.jpg" /></a>
 <p>On each side of the enclosure, a 90-degree opening allows virtual traffic through the door. The
 enclosure is slightly taller for stability, leaving a half-inch lip on the top and a quarter-inch
 lip on the bottom.</p>
@@ -62,37 +81,56 @@ lip on the bottom.</p>
 to layers fit into the enclosure while the half-inch wider top layer prevents the plug from slipping
 too far in.</p>
 <p>Another plug, this time one layer, fits into the bottom of the door enclosure, and the enclosure, in
-turn, fits into a circular opening in the quarter-inch fiberboard that represents the building's
+turn, fits into a circular opening in the quarter-inch fiberboard that represents the building’s
 floor, which in turn rests on the 3/4-inch fiberboard ground. A hole through these lower pieces
-provides for the door's axle.</p>
+provides for the door’s axle.</p>
 </div>
 <div class="section" id="revolving-door-and-axle">
-<h2>Revolving door and axle</h2>
+<h3>Revolving door and axle<a class="headerlink" href="#revolving-door-and-axle" title="Permalink to this headline">¶</a></h3>
 <p>The model uses a four-winged revolving door, made by slotting two pieces of fiberboard together.</p>
-<a class="reference external image-reference" href="img/revolver-schematic.jpg"><img alt="Revolving door schematic" src="img/revolver-schematic.jpg" style="width: 300px;" /></a>
+<a class="reference external image-reference" href="_static/img/revolver-schematic.jpg"><img alt="Revolving door schematic" src="_images/revolver-schematic-small.jpg" /></a>
 <p>The slightly wider slot in the bottom of the door pieces allows the door to couple to its drive
 axle via a nylon spacer; the axle itself, a zinc rod, pressure-fits into the spacer and extends
 below the ground, where another nylon spacer couples it to the stepper motor.</p>
 <p>Tolerances around the door are approximately 1/16 inch, due more to my carpentry skill than design.
 By fortuitous coincidence, this turns out to be approximately in scale with the gaps around the
 full-sized revolving door wings used as a reference.</p>
-<p>To keep the centered, the door uses a 4d finish nail's tip as its top axle.</p>
+<p>To keep the centered, the door uses a 4d finish nail’s tip as its top axle.</p>
 </div>
 <div class="section" id="swinging-door">
-<h2>Swinging door</h2>
+<h3>Swinging door<a class="headerlink" href="#swinging-door" title="Permalink to this headline">¶</a></h3>
 <p>The swinging door is the same size as one wing of the revolving door, matching the swinging doors
 installed beside the revolving door in the real-world office building used as a reference.</p>
-<a class="reference external image-reference" href="img/swinger-schematic.jpg"><img alt="Swinging door schematic" src="img/swinger-schematic.jpg" style="width: 300px;" /></a>
+<a class="reference external image-reference" href="_static/img/swinger-schematic.jpg"><img alt="Swinging door schematic" src="_images/swinger-schematic-small.jpg" /></a>
 <p>A small notch at the bottom of the swinging door leaves room for the servo arm to glue to the
 swinging door, thus coupling directly to the servo.</p>
 </div>
 </div>
+<div class="section" id="programming">
+<h2>Programming<a class="headerlink" href="#programming" title="Permalink to this headline">¶</a></h2>
+<p>The whole thing gets hooked up to an Arduino. It has a Web interface to control it and collect data. The <a class="reference external" href="https://bitbucket.org/julfers/revolvingdoorhoax">source code is on Bitbucket</a> and you can pretend you’re controlling the experiment with this in-browser demo:</p>
+<iframe class="model" src="_static/model.html"/></div>
 </div>
 
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
 <footer>
     <a href="index.html">Home</a>
-    <small>All original content and source code licensed under the
-        <a href="LICENSE.txt">WTFPL</a></small>
+    <a href="https://bitbucket.org/julfers/revolvingdoorhoax">Source code</a>
+    <small>Copyright 2017, WTFPL</small>
+
+    <script>
+    $('code.docutils.literal').each(function () {
+        // This whackiness removes the spans that docutils puts in inline code literals so that
+        // ascii math/mathjax can parse them.
+        this.textContent = this.textContent
+    })
+    </script>
 </footer>
-</body>
+
+  </body>
 </html>

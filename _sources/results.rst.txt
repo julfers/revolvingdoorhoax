@@ -1,0 +1,48 @@
+###########
+The results
+###########
+
+This chart plots the recorded temperature inside the model and outside, for given volumes of traffic. In the scenarios shown, it shows that for an average of 19 people per minute, the revolving door outperformed the swinging door.
+
+That is, while simulated people used the swinging door, the difference between outdoor and indoor temperature was lower than when they used the revolving door. This indicates the building was better insulated than the revolving door.
+
+Similar results held for other traffic volumes.
+
+How to read this chart
+======================
+
+- Time is on the x axis
+- Temperature is on the y axis
+- Blue represents outside sensors
+- Maroon represents inside sensors
+- The vertical height of each line is one degree celcius
+- Gray bars represent people moving through doors
+
+Pick different time frames to examine by clicking the chart or choosing from the selected ranges:
+
+.. raw:: html
+
+    <script src="_static/js/lib/jquery-1.11.0.js"></script>
+    <script src="_static/js/lib/skulpt.min.js"></script>
+    <script src="_static/js/lib/skulpt-stdlib.js"></script>
+    <script src="_static/js/doors.js"></script>
+
+    <div class="chart">
+        <!-- filled with content from chart.html -->
+    </div>
+    <script>
+    ;(function () {
+        'use strict'
+        $('.chart').load('_static/chart.html', function () {
+            var chart = doors.chart($('.chart'))
+            doors.results('_static/051100-0855.30.csv', '_static/051100-0855-scenarios.csv')
+            .onupdate(function (results, scenarios) {
+                chart.update(results, scenarios)
+            })
+        })
+    })()
+    </script>
+
+----
+
+Still hate revolving doors? Don't despair. Remember Galileo, did he recant? This is just a small-scale experiment. Perhaps the results don't scale to full-size doors or buildings...

@@ -1,0 +1,122 @@
+#############################
+The great revolving door hoax
+#############################
+
+.. toctree::
+    :maxdepth: 1
+
+    experiment
+    research/index
+    results
+
+Imagine, before you, two doors lie in wait, anticipating your choice. One, simple and familiar,
+but adorned by an admonishment to use the other. Imagine you do not know how your choice may affect
+the world. Is the revolving door an entertaining carousel offering an easy option to save energy or
+a rotary menace? Every day, this conundrum faces literally some people, maybe more.
+
+.. image:: _static/img/andrew-shea-door-sign.png
+    :alt: Sign with an arrow that claims "revolving doors use 8 times less energy"
+    :target: http://www.smalldisruptions.com/revolving_door.html#.UuVUAbROl_I
+    :width: 600
+
+The sign may claim it, but is it true? **Do revolving doors really save energy?**
+
+Reviewing :doc:`existing research <research/index>`, you might be surprised to find that no one has yet set up a simple,
+comprehensible experiment to show the difference. A reasonable person might wonder, when it would be
+so easy to do, **why has nobody tested the two door types, door to door?**
+
+-   Who benefits from keeping us in the dark?
+-   Is it it a coincidence that door companies sell two doors instead of one when someone installs
+    a revolver?
+
+For those who struggle with the conflict between love of convenience and duties to sign obedience,
+**this site is here to do that test.**
+
+:doc:`experiment`
+
+The intuitive case
+==================
+
+The `1938 Heating Ventilation and Air Conditioning Guide`_ suggests:
+
+    Infiltration rate through swinging and revolving doors is generally a matter of judgment... in
+    the absence of adequate research... revolving doors may be assumed 60 per cent of swinging door
+    values.
+
+That revolving door estimate probably came from Arthur Simpson, sales manager at the Van Kannel
+Revolving door company, but despite the conflict of interest, his intuition seems reasonable.
+
+In climates with winter, most of us users of the indoors have found ourselves uncomfortably near
+doors that periodically open to allow unpleasant cold air blasts. It appears sensible to believe
+that were the door a revolver, we should be subject to less an invasion of our warm air space, a
+line of reasoning that suffers two problems.
+
+First, even if our intuition on drafts is accurate, it hardly follows that the door should permit
+less air infiltration overall. Many unfortunate pioneers of flight coult attest that fluid dynamics
+is a messy and often unintuitive business.
+
+Second, thanks to sampling bias, we may not even be correct about relative draftiness. We sit beside
+many doors, but only notice the drafty handful. Since the world contains fewer rotary doors than the
+ordinary type, we're much less likely to sit near the revolvers. The revolvers are also probably
+installed in places with more entrance space, further reducing our chances of staying near them long
+enough to feeling a draft.
+
+And notice the peculiar similarity between a revolving door and a centrifugal pump:
+
+.. image:: _static/img/Centrifugal_pump_volute_Richards_1894.png
+    :alt: Schematic of the rotary blades in a centrifugal pump
+    :target: http://en.wikipedia.org/wiki/File:Centrifugal_pump_volute_Richards_1894.png
+    :height: 200
+
+Finally, if you imagine that the door gets used occasionally, it becomes clear that at rest, it
+eventually releases the entire contents of its outer-facing cell to the environment. All that air
+previously rested indoors, and it is hard to imagine that a single use of a swinging door should
+transfer such a large volume.
+
+Related trivia
+==============
+
+The folks at 99 Percent Invisible hold that Van Kannel invented revolving doors to `avoid his
+obligation to hold doors for old ladies`_, thus reducing social awkwardness. Few who have
+accidentally found themselves sharing a door cell would agree that revolving doors reduce net social
+anxiety in the world.
+
+----
+
+For safety, standard A156.27, *Power and Manual Operated Revolving Pedestrian Doors*, limits
+revolving door speed to `12 revolutions per minute`_.
+
+----
+
+The `Cocoanut Grove nightclub`_ infamously killed 492 trapped behind a revolving door, instigating
+building codes that now require ordinary swinging doors beside the rotary type. An entire website,
+`cocoanutgrovefire.org`_ commemorates the fire.
+
+----
+
+In 2004, A motorized revolving door `fatally crushed a child's head`_ in Tokyo.
+
+----
+
+A widow in San Fransisco `sued a hotel`_ for killing her husband by hitting him with a revolving
+door, thereby shoving him into a wall, breaking his hip, necessitating surgery, where he suffered a
+fatal heart attack.
+
+----
+
+We can't be sure how many firefighters it takes to save a dachshund from a murderous revolving door,
+but `the answer is not ten`_.
+
+----
+
+YouTube contains much work on `revolving door fail`_.
+
+.. _1938 Heating Ventilation and Air Conditioning Guide: http://archive.org/stream/heatingventilati006468mbp/heatingventilati006468mbp_djvu.txt
+.. _avoid his obligation to hold doors for old ladies: http://99percentinvisible.org/episode/revolving-doors/
+.. _12 revolutions per minute: http://www.hortondoors.com/learning-center/Documents/Revolving-Doors-101-Specifying-a-more-energy-efficient-secure-opening.pdf
+.. _Cocoanut Grove nightclub: http://en.wikipedia.org/wiki/Cocoanut_Grove_fire
+.. _cocoanutgrovefire.org: http://www.cocoanutgrovefire.org/home/legal
+.. _fatally crushed a child's head: http://www.japantimes.co.jp/news/2004/03/27/national/boy-crushed-in-roppongi-hills-doors/#.UuHaubROlhE
+.. _sued a hotel: http://www.sfgate.com/news/article/Court-Allows-Suit-Over-Fatal-Accident-In-2693460.php
+.. _the answer is not ten: http://www.independent.co.uk/news/uk/home-news/rip-alan-the-dachshund-tatler-magazines-office-dog-killed-in-grisly-revolving-door-accident-8452751.html 
+.. _revolving door fail: http://www.youtube.com/results?search_query=revolving%20door%20fail
