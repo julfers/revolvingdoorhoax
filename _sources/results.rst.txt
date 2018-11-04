@@ -4,7 +4,7 @@ The results
 
 This chart plots the recorded temperature inside the model and outside, for given volumes of traffic. In the scenarios shown, it shows that for an average of 19 people per minute, the revolving door outperformed the swinging door.
 
-That is, while simulated people used the swinging door, the difference between outdoor and indoor temperature was lower than when they used the revolving door. This indicates the building was better insulated than the revolving door.
+That is, while simulated people used the swinging door, the difference between outdoor and indoor temperature was lower than when they used the revolving door. This indicates the building was better insulated with the revolving door.
 
 Similar results held for other traffic volumes.
 

@@ -4,20 +4,12 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>The MIT study &#8212; The great revolving door hoax 1 documentation</title>
     <link rel="stylesheet" href="../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../',
-        VERSION:     '1',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script type="text/javascript" src="/_static/js/lib/jquery-1.11.0.js"></script>
     <script type="text/javascript" src="/_static/js/classify.js"></script>
     <script type="text/javascript" src="/_static/js/lib/ASCIIMathML.js"></script>
@@ -25,8 +17,7 @@
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="MIT estimation method condensed" href="mit-study-distilled.html" />
     <link rel="prev" title="Existing research" href="index.html" /> 
-  </head>
-  <body>
+  </head><body>
 <header >
     <div><!-- for styling -->
         <a href="../index.html">The revolving door hoax</a>
@@ -54,12 +45,12 @@ energy calculations dubious.</p>
 <p>According to the paper, swinging door air infiltration can be read off two charts, one for leakage
 through seals and the other for leakage due to opening for traffic. Reading the infiltration rate
 on both charts depends on air pressure, so first attempt to calculation the pressure difference
-between indoor and outdoor. The given formula, <code class="docutils literal"><span class="pre">`Deltap</span> <span class="pre">=</span> <span class="pre">p_(w)</span> <span class="pre">-</span> <span class="pre">Deltap_(s)`</span></code>, subtracts stack
+between indoor and outdoor. The given formula, <code class="docutils literal notranslate"><span class="pre">`Deltap</span> <span class="pre">=</span> <span class="pre">p_(w)</span> <span class="pre">-</span> <span class="pre">Deltap_(s)`</span></code>, subtracts stack
 pressure from window pressure.</p>
-<p>The formula <code class="docutils literal"><span class="pre">`C_1</span> <span class="pre">rho_0</span> <span class="pre">((T_o</span> <span class="pre">-</span> <span class="pre">T_i)</span> <span class="pre">/</span> <span class="pre">T_i)</span> <span class="pre">g</span> <span class="pre">(H_&quot;NPL&quot;</span> <span class="pre">-</span> <span class="pre">H)`</span></code> yields stack pressure from
+<p>The formula <code class="docutils literal notranslate"><span class="pre">`C_1</span> <span class="pre">rho_0</span> <span class="pre">((T_o</span> <span class="pre">-</span> <span class="pre">T_i)</span> <span class="pre">/</span> <span class="pre">T_i)</span> <span class="pre">g</span> <span class="pre">(H_&quot;NPL&quot;</span> <span class="pre">-</span> <span class="pre">H)`</span></code> yields stack pressure from
 given numbers and the estimated 70 foot height of the building, plugging in numbers turns stack
 pressure into this function of outdoor temperature:</p>
-<p><code class="docutils literal"><span class="pre">`0.00598</span> <span class="pre">*</span> <span class="pre">0.075</span> <span class="pre">((T_o</span> <span class="pre">-</span> <span class="pre">532)</span> <span class="pre">/</span> <span class="pre">532)</span> <span class="pre">32.2</span> <span class="pre">*</span> <span class="pre">(35</span> <span class="pre">-</span> <span class="pre">3.5)`</span></code> or <code class="docutils literal"><span class="pre">`0.000855</span> <span class="pre">DeltaT`</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">`0.00598</span> <span class="pre">*</span> <span class="pre">0.075</span> <span class="pre">((T_o</span> <span class="pre">-</span> <span class="pre">532)</span> <span class="pre">/</span> <span class="pre">532)</span> <span class="pre">32.2</span> <span class="pre">*</span> <span class="pre">(35</span> <span class="pre">-</span> <span class="pre">3.5)`</span></code> or <code class="docutils literal notranslate"><span class="pre">`0.000855</span> <span class="pre">DeltaT`</span></code></p>
 <p>In the coldest and warmest months:</p>
 <table border="1" class="docutils">
 <colgroup>
@@ -79,7 +70,7 @@ pressure into this function of outdoor temperature:</p>
 </table>
 <p>At this point, the calculation should incorporate pressure due to wind, interpolating values given,
 a function of “wind pressure coefficient” and wind speed:</p>
-<p><code class="docutils literal"><span class="pre">`p_w</span> <span class="pre">=</span> <span class="pre">0.0129</span> <span class="pre">*</span> <span class="pre">0.075</span> <span class="pre">C_p</span> <span class="pre">U^2</span> <span class="pre">/</span> <span class="pre">2`</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">`p_w</span> <span class="pre">=</span> <span class="pre">0.0129</span> <span class="pre">*</span> <span class="pre">0.075</span> <span class="pre">C_p</span> <span class="pre">U^2</span> <span class="pre">/</span> <span class="pre">2`</span></code></p>
 <p>The study gives figures from which to read the wind pressure coefficient, but no indication of which
 value it actually used. Interpreting the pressure coefficient diagrams and schematics of the a
 building front, a reasonable range of coefficients would be -0.7 to 0.7. At most, however, the
@@ -133,8 +124,10 @@ these ranges:</p>
 </tr>
 </tbody>
 </table>
-<p><em>Work in progress, pending verification, it appears that the MIT study overestimates air
-infiltration through swinging doors.</em></p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">My analysis oncluded that the MIT study overestimates air infiltration through swinging doors, but I tired of writing it up after I <a class="reference internal" href="../results.html"><span class="doc">got my own results</span></a>, so this page is sadly incomplete…</p>
+</div>
 </div>
 
 

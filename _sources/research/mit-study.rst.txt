@@ -61,8 +61,9 @@ February August October
  0.103    0.026  0.083
 ======== ====== =======
 
-*Work in progress, pending verification, it appears that the MIT study overestimates air
-infiltration through swinging doors.*
+.. note::
+
+   My analysis oncluded that the MIT study overestimates air infiltration through swinging doors, but I tired of writing it up after I :doc:`got my own results <../results>`, so this page is sadly incomplete...
 
 .. _this site's research review: research.html
 .. _MIT study (PDF): http://web.mit.edu/~slanou/www/shared_documents/366_06_REVOLVING_DOOR.pdf

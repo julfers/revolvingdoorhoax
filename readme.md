@@ -1,6 +1,6 @@
 # The great revolving door hoax #
 
-Visit the project site at http://revolvingdoorhoax.org.
+Visit the project site at http://revolvingdoorhoax.org. The Github repository serves the site, the actual source lives in a [Mercurial repository].
 
 ## Run the experiment ##
 
@@ -38,6 +38,9 @@ pip install sphinx
 make clean html
 ```
 
+To deploy, run `./deploy-site.sh`
+
+[Mercurial repository]: https://bitbucket.org/julfers/revolvingdoorhoax
 [Python 2]: https://www.python.org/
 [Sphinx]: http://sphinx-doc.org/latest/install.html
 [pySerial]: http://pyserial.sourceforge.net/
