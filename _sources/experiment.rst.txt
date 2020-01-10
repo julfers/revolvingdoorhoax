@@ -103,10 +103,10 @@ swinging door, thus coupling directly to the servo.
 Programming
 ===========
 
-The whole thing gets hooked up to an Arduino. It has a Web interface to control it and collect data. The `source code is on Bitbucket`_ and you can pretend you're controlling the experiment with this in-browser demo:
+The whole thing gets hooked up to an Arduino. It has a Web interface to control it and collect data. The `source code is on Sourcehut`_ and you can pretend you're controlling the experiment with this in-browser demo:
 
 .. raw:: html
 
     <iframe class="model" src="_static/model.html"/>
 
-.. _Source code is on Bitbucket: https://bitbucket.org/julfers/revolvingdoorhoax
+.. _Source code is on Sourcehut: https://hg.sr.ht/~julfers/revolvingdoorhoax
